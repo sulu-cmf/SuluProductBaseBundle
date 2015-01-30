@@ -7,7 +7,7 @@
  * with this source code in the file LICENSE.
  */
 
-define(['config'], function (Config) {
+define(['config', 'suluproduct/util/productUpdate'], function(Config, ProductUpdate) {
     'use strict';
 
     var formSelector = '#product-pricing-form',
@@ -38,9 +38,12 @@ define(['config'], function (Config) {
                 save.call(this);
             }, this);
 
-            this.sandbox.on('sulu.products.saved', function () {
+            this.sandbox.on('sulu.products.saved', function (data) {
+                this.options.data = data;
+                this.status = this.options.data.status;
+                // fixes problem with new entered prices
+                this.sandbox.form.setData(formSelector, data);
                 setHeaderBar.call(this, true);
-                this.options.data.status = this.status;
             }, this);
 
             this.sandbox.on('sulu.header.back', function () {
@@ -86,6 +89,20 @@ define(['config'], function (Config) {
                 this.sandbox.emit('sulu.header.toolbar.state.change', type, saved, true);
             }
             this.saved = saved;
+            propagateState.call(this);
+        },
+
+        /**
+         * Propagates the state of the content with an event
+         *  sulu.content.saved when the content has been saved
+         *  sulu.content.changed when the content has been changed
+         */
+        propagateState = function() {
+            if (!!this.saved) {
+                this.sandbox.emit('sulu.content.saved');
+            } else {
+                this.sandbox.emit('sulu.content.changed');
+            }
         },
 
         setHeaderInformation = function () {
@@ -119,9 +136,6 @@ define(['config'], function (Config) {
             this.sandbox.dom.on(formSelector, 'keyup', function () {
                 setHeaderBar.call(this, false);
             }.bind(this), 'input, textarea');
-            this.sandbox.on('sulu.content.changed', function () {
-                setHeaderBar.call(this, false);
-            }.bind(this));
             this.sandbox.on('husky.select.tax-class.selected.item', function () {
                 setHeaderBar.call(this, false);
             }.bind(this));
@@ -134,14 +148,14 @@ define(['config'], function (Config) {
 
         templates: ['/admin/product/template/product/pricing'],
 
-        initialize: function () {
-            this.status  = !!this.options.data ? this.options.data.status : Config.get('product.status.active');
-
-            bindCustomEvents.call(this);
-
-            render.call(this);
-
-            listenForChange.call(this);
+        initialize: function() {
+            this.sandbox.data.when(ProductUpdate.update(this.sandbox)).then(function(data) {
+                this.options.data = data;
+                this.status = !!this.options.data ? this.options.data.status : Config.get('product.status.active');
+                render.call(this);
+                listenForChange.call(this);
+                bindCustomEvents.call(this);
+            }.bind(this));
         }
     };
 });

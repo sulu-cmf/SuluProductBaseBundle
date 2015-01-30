@@ -9,8 +9,9 @@
 
 define([
     'config',
-    'suluproduct/util/header'
-], function (Config, HeaderUtil) {
+    'suluproduct/util/header',
+    'suluproduct/util/productUpdate'
+], function (Config, HeaderUtil, ProductUpdate) {
     'use strict';
 
     var constants = {
@@ -109,6 +110,20 @@ define([
                 this.sandbox.emit('husky.toolbar.'+constants.toolbarInstanceName+'.item.enable','save-button',true);
             }
             this.saved = saved;
+            propagateState.call(this);
+        },
+
+        /**
+         * Propagates the state of the content with an event
+         *  sulu.content.saved when the content has been saved
+         *  sulu.content.changed when the content has been changed
+         */
+        propagateState = function() {
+            if (!!this.saved) {
+                this.sandbox.emit('sulu.content.saved');
+            } else {
+                this.sandbox.emit('sulu.content.changed');
+            }
         },
 
         bindCustomEvents = function() {
@@ -217,14 +232,16 @@ define([
 
         templates: ['/admin/product/template/product/variants'],
 
-        initialize: function () {
-            this.saved = true;
-            this.status  = !!this.options.data ? this.options.data.status : Config.get('product.status.active');
-            render.call(this);
+        initialize: function() {
+            this.sandbox.data.when(ProductUpdate.update(this.sandbox)).then(function(data) {
+                this.options.data = data;
+                this.saved = true;
+                this.status = !!this.options.data ? this.options.data.status : Config.get('product.status.active');
 
-            bindCustomEvents.call(this);
-
-            setHeaderInformation.call(this);
+                render.call(this);
+                bindCustomEvents.call(this);
+                setHeaderInformation.call(this);
+            }.bind(this));
         }
     };
 });

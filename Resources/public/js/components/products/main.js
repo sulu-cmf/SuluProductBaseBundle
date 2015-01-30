@@ -125,6 +125,13 @@ define([
 
             // workflow
             this.sandbox.on('sulu.products.workflow.triggered', this.triggerWorkflowAction.bind(this));
+
+            // listens for a product update request
+            this.sandbox.on('sulu.products.get-product-update', this.getProductUpdate.bind(this));
+        },
+
+        getProductUpdate: function(){
+            this.sandbox.emit('sulu.products.product-update', this.product.toJSON());
         },
 
         triggerWorkflowAction: function(data) {
@@ -208,6 +215,7 @@ define([
                     if (!!data.id) {
                         this.sandbox.emit('sulu.products.saved', model);
                     } else {
+                        this.sandbox.emit('sulu.content.saved');
                         this.load(model.id, this.options.locale);
                     }
                 }.bind(this),

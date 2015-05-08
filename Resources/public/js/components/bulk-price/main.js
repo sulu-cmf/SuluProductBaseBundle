@@ -89,8 +89,11 @@ define(['text!suluproduct/components/bulk-price/bulk-price.html'], function(Bulk
         },
 
         bindDomEvents = function() {
-            this.sandbox.dom.on(this.$el, 'keyup', function() {
+            this.sandbox.dom.on(this.$el, 'change', function() {
                 refreshData.call(this);
+            }.bind(this), 'input');
+            this.sandbox.dom.on(this.$el, 'blur', function() {
+                this.sandbox.emit("sulu.content.changed");
             }.bind(this), 'input');
         },
 
@@ -132,36 +135,81 @@ define(['text!suluproduct/components/bulk-price/bulk-price.html'], function(Bulk
                 }
             }.bind(this));
 
+            // special prices
+            var specialPrice = {};
+            specialPrice.currency = {};
+            specialPrice.start = $('#husky-input-dateFrom' + this.options.currency.code).val()
+            specialPrice.end = $('#husky-input-dateTo' + this.options.currency.code).val();
+            specialPrice.price = $('#input' + this.options.currency.code).val();
+            specialPrice.currency = this.options.currency;
+
+            this.sandbox.dom.data(this.$el, 'itemsSpecialPrice', specialPrice);
             this.sandbox.dom.data(this.$el, 'items', priceItems);
             this.sandbox.emit('sulu.products.bulk-price.changed');
+        },
+
+        initDateComponents = function (dateId, specialPrice) {
+            this.sandbox.start([
+                {
+                    name: 'input@husky',
+                    options: {
+                        el: '#' + dateId.from,
+                        instanceName: dateId.from,
+                        skin: 'date'
+                    }
+                }
+            ]);
+            this.sandbox.start([
+                {
+                    name: 'input@husky',
+                    options: {
+                        el: '#' + dateId.to,
+                        instanceName: dateId.to,
+                        skin: 'date'
+                    }
+                }
+            ]);
         };
 
     return {
 
         initialize: function() {
-            var prices = [], salesPrice;
+            var prices = [], salesPrice, specialPrice = [], dateId = [];
 
             this.options = this.sandbox.util.extend({}, defaults, this.options);
-            if (!!this.options.data) {
-                prices = this.sandbox.util.extend([], this.options.data);
+            if (!!this.options.data.prices) {
+                prices = this.sandbox.util.extend([], this.options.data.prices);
                 salesPrice = getSalesPriceAndRemoveFromPrices.call(this, prices);
             }
+
+            if(!!this.options.data.specialPrice) {
+                specialPrice = this.options.data.specialPrice;
+                specialPrice.price = this.sandbox.numberFormat(specialPrice.price, 'n');
+            }
+
+            dateId.inputId = "input" + this.options.data.currencyCode;
+            dateId.from = "dateFrom" + this.options.data.currencyCode;
+            dateId.to = "dateTo" + this.options.data.currencyCode;
+            specialPrice.dateId = dateId;
+
 
             prices = addEmptyObjects.call(this, prices);
             bindDomEvents.call(this);
 
-            this.render(prices, salesPrice);
+            this.render(prices, salesPrice, specialPrice);
             refreshData.call(this);
+            initDateComponents.call(this, dateId, specialPrice);
             this.sandbox.emit(INITIALIZED.call(this));
         },
 
-        render: function(prices, salesPrice) {
+        render: function(prices, salesPrice, specialPrice) {
             var data = {
                     idPrefix: constants.bulkPriceIdPrefix,
                     currency: this.options.currency,
                     salesPrice: salesPrice,
                     translate: this.sandbox.translate,
-                    prices: prices
+                    prices: prices,
+                    specialPrice: specialPrice
                 },
                 $el = this.sandbox.util.template(BulkPriceTemplate, data);
             this.sandbox.dom.append(this.options.el, $el);

@@ -57,15 +57,19 @@ define([], function() {
         updateData = function(){
             // get all items
             var $bulkPrices = this.sandbox.dom.children(this.$el),
-                data = [], prices;
+                pricesData = [], prices, specialPrice, specialPriceData = [];
 
             this.sandbox.util.foreach($bulkPrices, function($bulkPrice){
                 prices = this.sandbox.dom.data($bulkPrice, 'items');
-                Array.prototype.push.apply(data, prices);
+                specialPrice = $.data($bulkPrice, 'itemsSpecialPrice');
+                Array.prototype.push.apply(pricesData, prices);
+                Array.prototype.push.call(specialPriceData, specialPrice);
             }.bind(this));
 
             // set properties
-            this.sandbox.dom.data(this.$el, 'prices', data);
+            this.sandbox.dom.data(this.$el, 'prices', pricesData);
+            var specialPricesEl = $('#specialPrices');
+            this.sandbox.dom.data(specialPricesEl, 'prices', specialPriceData);
         },
 
         placeDefaultCurrencyFirst = function(defaultCur, currencies){
@@ -103,9 +107,13 @@ define([], function() {
         initialize: function() {
             this.options = this.sandbox.util.extend({}, defaults, this.options);
             this.groupedPrices = [];
-            if(!!this.options.data && this.options.data.length > 0) {
-                this.groupedPrices = groupPrices.call(this, this.options.data);
+            if(!!this.options.data.prices && this.options.data.prices.length > 0) {
+                this.groupedPrices.prices = groupPrices.call(this, this.options.data.prices);
                 placeDefaultCurrencyFirst.call(this, this.options.defaultCurrency, this.options.currencies);
+            }
+
+            if(!!this.options.data.specialPrices && this.options.data.specialPrices.length > 0) {
+                this.groupedPrices.specialPrices = groupPrices.call(this, this.options.data.specialPrices);
             }
 
             bindCustomEvents.call(this);
@@ -122,10 +130,23 @@ define([], function() {
             var bulkPriceComponents = [];
 
             this.sandbox.util.foreach(this.options.currencies, function(currency){
+
+                this.bulkPriceData = [];
+
+                this.bulkPriceData.currencyCode = currency.code;
+
+                if (!!this.groupedPrices.prices) {
+                    this.bulkPriceData.prices = this.groupedPrices.prices[currency.code];
+                }
+             
+                if (!!this.groupedPrices.specialPrices && currency.code in this.groupedPrices.specialPrices) {
+                    this.bulkPriceData.specialPrice = this.groupedPrices.specialPrices[currency.code].pop();
+                }
+
                 var $el = this.sandbox.dom.createElement(templates.bulkPrice(currency.code)),
                     options = {
                         el: $el,
-                        data: !!this.groupedPrices[currency.code] ? this.groupedPrices[currency.code] : [],
+                        data: this.bulkPriceData,
                         instanceName: currency.code,
                         currency: currency
                     };

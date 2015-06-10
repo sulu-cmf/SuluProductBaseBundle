@@ -174,6 +174,7 @@ define(['config'], function(Config) {
             if (this.newSelections.indexOf(id) > -1) {
                 this.newSelections.splice(this.newSelections.indexOf(id), 1);
             }
+            this.sandbox.emit('sulu.media-selection.document-selection.data-changed');
         },
 
         /**
@@ -197,6 +198,7 @@ define(['config'], function(Config) {
             if (this.removedSelections.indexOf(id) > -1) {
                 this.removedSelections.splice(this.removedSelections.indexOf(id), 1);
             }
+            this.sandbox.emit('sulu.media-selection.document-selection.data-changed');
         },
 
         /**

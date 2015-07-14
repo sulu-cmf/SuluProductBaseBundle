@@ -24,6 +24,7 @@ use Sulu\Component\Rest\Exception\MissingArgumentException;
 use Sulu\Component\Rest\Exception\RestException;
 use Sulu\Component\Rest\ListBuilder\Doctrine\DoctrineListBuilderFactory;
 use Sulu\Component\Rest\ListBuilder\ListRepresentation;
+use Sulu\Component\Rest\ListBuilder\ListRestHelper;
 use Sulu\Component\Rest\RestController;
 use Sulu\Component\Rest\RestHelperInterface;
 use Sulu\Component\Security\SecuredControllerInterface;
@@ -109,6 +110,10 @@ class ProductController extends RestController implements ClassResourceInterface
                 $this->getLocale($request)
             );
 
+            // TODO: get ids by filters
+
+            // TODO: create fast count function 
+
             $list = $this->flatResponse(
                 $request,
                 $filter,
@@ -148,6 +153,8 @@ class ProductController extends RestController implements ClassResourceInterface
         /** @var DoctrineListBuilderFactory $factory */
         $factory = $this->get('sulu_core.doctrine_list_builder_factory');
 
+        $listRestHelper = new ListRestHelper($request);
+
         $listBuilder = $factory->create($entityName);
 
         $restHelper->initializeListBuilder(
@@ -155,16 +162,43 @@ class ProductController extends RestController implements ClassResourceInterface
             $fieldDescriptors
         );
 
-        foreach ($filter as $key => $value) {
-            if (is_array($value)) {
-                $listBuilder->in($filterFieldDescriptors[$key], $value);
-            } else {
-                $listBuilder->where($filterFieldDescriptors[$key], $value);
-            }
+//        foreach ($filter as $key => $value) {
+//            if (is_array($value)) {
+//                $listBuilder->in($filterFieldDescriptors[$key], $value);
+//            } else {
+//                $listBuilder->where($filterFieldDescriptors[$key], $value);
+//            }
+//        }
+
+        // get total count
+        $locale = $this->getLocale($request);
+        // TODO: test search - take search-fields into account
+        $filter['search'] = $listRestHelper->getSearchPattern($request);
+        $filter['searchFields'] = $listRestHelper->getSearchFields();
+        // filter null vars
+        $filter = array_filter($filter);
+        $count = $this->getManager()->countByFilter($filter, $locale);
+
+        $filter['limit'] = $listRestHelper->getLimit($request);
+        $filter['page'] = $listRestHelper->getPage($request);
+        $sortColumn = $listRestHelper->getSortColumn();
+        if ($sortColumn) {
+//            $filter['orderBy'] = $this->getManager()->getFieldDescriptor('changed')->getEntityName . '' . $sortColumn . ' ' . $listRestHelper->getSortOrder();
         }
 
-        // TODO, should only be added if "categories" are requested
-        $listBuilder->addGroupBy($fieldDescriptors['id']);
+        // find product ids
+        $ids = $this->getManager()->findIdsByFilter($filter, $locale);
+
+        // filter result by ids found in previous query
+        $filter['ids'] = $ids;
+        $listBuilder->in($fieldDescriptors['id'], $filter['ids']);
+
+        // TODO: total-count
+
+        // if "categories" are requested - group by id
+        if (isset($filter['categories'])) {
+            $listBuilder->addGroupBy($fieldDescriptors['id']);
+        }
 
         $list = new ListRepresentation(
             $listBuilder->execute(),
@@ -173,7 +207,7 @@ class ProductController extends RestController implements ClassResourceInterface
             $request->query->all(),
             $listBuilder->getCurrentPage(),
             $listBuilder->getLimit(),
-            $listBuilder->count()
+            $count
         );
 
         return $list;

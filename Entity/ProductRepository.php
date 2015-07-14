@@ -4,8 +4,10 @@ namespace Sulu\Bundle\ProductBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
+use Doctrine\ORM\QueryBuilder;
 use Sulu\Bundle\ProductBundle\Product\ProductRepositoryInterface;
 use Sulu\Bundle\ProductBundle\Entity\Product;
+use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescriptor;
 
 /**
  * ProductRepository
@@ -125,6 +127,11 @@ class ProductRepository extends EntityRepository implements ProductRepositoryInt
                         $qb->andWhere('type.id = :' . $key);
                         $qb->setParameter($key, $value);
                         break;
+
+                    case 'ids':
+                        $qb->andWhere('product.id IN (:ids)');
+                        $qb->setParameter('ids', $value);
+                        break;
                 }
             }
 
@@ -132,6 +139,230 @@ class ProductRepository extends EntityRepository implements ProductRepositoryInt
             return $query->getResult();
         } catch (NoResultException $ex) {
             return null;
+        }
+    }
+
+    /**
+     * Returns all products with the given locale and ids
+     *
+     * @param string $locale The locale to load
+     * @param array $ids
+     * @return ProductInterface[]
+     */
+    public function findByLocaleAndIds($locale, array $ids = array())
+    {
+        try {
+            $qb = $this->getProductQuery($locale);
+            $qb->where('product.id IN (:ids)');
+            $qb->setParameter('ids', $ids);
+            $query = $qb->getQuery();
+
+            return $query->getResult();
+        } catch (NoResultException $ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Get product ids by filter criteria
+     *
+     * @param array $filter
+     * @param string $locale
+     *
+     * @return array
+     */
+    public function findIdsByFilter($filter, $fieldDescriptors)
+    {
+        $queryBuilder = $this->getIdsQueryBuilder($filter);
+        $query = $queryBuilder->getQuery();
+
+        $result = $query->getScalarResult();
+
+        $filteredResult = array_map(function($array) {
+            return $array['id'];
+        }, $result);
+
+        return $filteredResult;
+    }
+
+    /**
+     * Get product ids by filter criteria
+     *
+     * @param array $filter
+     * @param array $fieldDescriptors
+     *
+     * @return array
+     */
+    public function findCountByFilter($filter, $fieldDescriptors)
+    {
+        $queryBuilder = $this->getIdsQueryBuilder($filter, $fieldDescriptors, 'COUNT(product.id)');
+        $query = $queryBuilder->getQuery();
+
+        $result = $query->getScalarResult();
+
+        $resultCount = count($result);
+        if ( $resultCount > 1) {
+            return $resultCount;
+        }
+
+        return array_values($result[0])[0];
+    }
+
+    /**
+     * Creates querybuilder for selecting ids by filter-criteria
+     *
+     * @param array $filter
+     * @param array $fieldDescriptors
+     * @param string $select
+     *
+     * @throws \Exception
+     *
+     * @return QueryBuilder
+     */
+    protected function getIdsQueryBuilder(
+        $filter,
+        $fieldDescriptors = array(),
+        $select = 'product.id'
+    ) {
+        $queryBuilder = $this->createQueryBuilder('product AND PoolAlpinProductBundle:Product')->select($select);
+
+        // which relations have already been joined
+        $joinedTables = array();
+
+        foreach ($filter as $index => $value) {
+            switch ($index) {
+                case 'status':
+                case 'status_id':
+                    $queryBuilder
+                        ->join('product.status', 'status')
+                        ->andWhere('status.id IN (:status)')
+                        ->setParameter('status', $value);
+                    break;
+
+                case 'type':
+                case 'type_id':
+                    $queryBuilder
+                        ->join('product.type', 'type')
+                        ->andWhere('type.id IN (:type)')
+                        ->setParameter('type', $value);
+                    break;
+
+                case 'supplier_id':
+                    $queryBuilder
+                        ->join('product.supplier', 'supplier')
+                        ->andWhere('supplier.id = :supplierId')
+                        ->setParameter('supplierId', $value);
+                    $joinedTables[] = 'product.supplier';
+                    break;
+
+                case 'is_deprecated':
+                    $queryBuilder->andWhere('product.isDeprecated = true');
+                    break;
+
+                case 'parent':
+                    $queryBuilder
+                        ->join('product.parent', 'parent')
+                        ->andWhere('parent.id = :parentId')
+                        ->setParameter('parentId', $value);
+                    break;
+
+                case 'categories':
+                    $queryBuilder
+                        ->leftJoin('product.categories', 'categories')
+                        ->andWhere('categories.id IN (:categoryIds)')
+                        ->setParameter('categoryIds', $value);
+                    break;
+
+                case 'offset':
+                    $queryBuilder->setFirstResult($value);
+                    break;
+
+                case 'limit':
+                    $queryBuilder->setMaxResults($value);
+                    break;
+
+                case 'orderBy':
+                    list($orderBy, $orderSort) = explode(' ', $value);
+                    $queryBuilder->addOrderBy($orderBy, $orderSort);
+                    break;
+
+                case 'search':
+                    $this->createSearchQuery($filter, $queryBuilder, $fieldDescriptors, $joinedTables);
+                    break;
+            }
+        }
+
+        return $queryBuilder;
+    }
+
+    /**
+     * Creates search query with given filter data and field-descriptors
+     *
+     * @param array $filter
+     * @param QueryBuilder $queryBuilder
+     * @param array $fieldDescriptors
+     * @param array $alreadyJoinedTables
+     */
+    private function createSearchQuery(
+        $filter,
+        $queryBuilder,
+        $fieldDescriptors,
+        &$alreadyJoinedTables
+    ) {
+        $searchFields = $filter['searchFields'];
+        $search = $filter['search'];
+
+        $this->addJoinsForFields($queryBuilder, $searchFields, $fieldDescriptors, $alreadyJoinedTables);
+
+        $searchParts = array();
+        foreach ($searchFields as $searchField) {
+            $descriptor = $fieldDescriptors[$searchField];
+            $searchParts[] = $descriptor->getSelect() . ' LIKE :search';
+        }
+        $queryBuilder->andWhere('(' . implode(' OR ', $searchParts) . ')');
+        $queryBuilder->setParameter('search', '%' . $search . '%');
+    }
+
+    private function addJoinsForFields($queryBuilder, $fields, $fieldDescriptors, &$alreadyJoinedTables)
+    {
+        $joins = array();
+
+        foreach ($fields as $field) {
+            if (!isset($fieldDescriptors[$field])) {
+                throw new \Exception("Field descriptor '$field' not found");
+            }
+            /** @var \Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor $descriptor */
+            $descriptor = $fieldDescriptors[$field];
+
+            // already joined
+            if (array_search($descriptor->getSelect(), $alreadyJoinedTables) != false) {
+                continue;
+            }
+
+            $joins = array_merge($joins, $descriptor->getJoins());
+            $alreadyJoinedTables[] = $descriptor->getSelect();
+        }
+
+        // add join to querybuilder
+        foreach ($joins as $entity => $join) {
+            switch ($join->getJoinMethod()) {
+                case DoctrineJoinDescriptor::JOIN_METHOD_LEFT:
+                    $queryBuilder->leftJoin(
+                        $join->getJoin(),
+                        $entity,
+                        $join->getJoinConditionMethod(),
+                        $join->getJoinCondition()
+                    );
+                    break;
+                case DoctrineJoinDescriptor::JOIN_METHOD_INNER:
+                    $queryBuilder->innerJoin(
+                        $join->getJoin(),
+                        $entity,
+                        $join->getJoinConditionMethod(),
+                        $join->getJoinCondition()
+                    );
+                    break;
+            }
         }
     }
 
@@ -162,26 +393,5 @@ class ProductRepository extends EntityRepository implements ProductRepositoryInt
             ->setParameter('locale', $locale);
 
         return $qb;
-    }
-
-    /**
-     * Returns all products with the given locale and ids
-     *
-     * @param string $locale The locale to load
-     * @param array $ids
-     * @return ProductInterface[]
-     */
-    public function findByLocaleAndIds($locale, array $ids = array())
-    {
-        try {
-            $qb = $this->getProductQuery($locale);
-            $qb->where('product.id IN (:ids)');
-            $qb->setParameter('ids', $ids);
-            $query = $qb->getQuery();
-
-            return $query->getResult();
-        } catch (NoResultException $ex) {
-            return null;
-        }
     }
 }

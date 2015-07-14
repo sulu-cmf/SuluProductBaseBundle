@@ -785,12 +785,104 @@ class ProductManager implements ProductManagerInterface
     }
 
     /**
+     * Get filters provided by the request
+     *
+     * @param Request $request
+     *
+     * @return List $filter
+     */
+    public function getFilters(Request $request)
+    {
+        $filter = array();
+
+        $statuses = $request->get('status');
+        if ($statuses) {
+            $filter['status'] = explode(',', $statuses);
+        }
+
+        $statusIds = $request->get('status_id');
+        if ($statusIds) {
+            $filter['status_id'] = explode(',', $statusIds);
+        }
+
+        $types = $request->get('type');
+        if ($types) {
+            $filter['type_id'] = explode(',', $types);
+        }
+
+        $typeIds = $request->get('type_id');
+        if ($typeIds) {
+            $filter['type_id'] = explode(',', $typeIds);
+        }
+
+        $supplierId = $request->get('supplier_id');
+        if ($supplierId) {
+            $filter['accounts_supplier_id'] = $supplierId;
+        }
+
+        $isDeprecated = $request->get('is_deprecated');
+        if ($isDeprecated !== null) {
+            $filter['is_deprecated'] = $isDeprecated;
+        }
+
+        $parent = $request->get('parent');
+        if ($parent) {
+            $filter['parent'] = ($parent == 'null') ? null : $parent;
+        }
+
+        $categories = $request->get('categories');
+        if ($categories) {
+            $filter['categories'] = ($categories == 'null') ? null : $categories;
+        }
+
+        return $filter;
+    }
+
+    /**
+     * Get id's of products filtered by certain criteria
+     *
+     * @param array $filter
+     * @param string|null $locale
+     */
+    public function findIdsByFilter($filter, $locale)
+    {
+        return $this->productRepository->findIdsByFilter($filter, $this->getFieldDescriptors($locale));
+    }
+
+    /**
+     * Get total amount of products filtered by certain criteria
+     *
+     * @param array $filter
+     * @param string $locale
+     */
+    public function countByFilter($filter, $locale)
+    {
+        return $this->productRepository->findCountByFilter($filter, $this->getFieldDescriptors($locale));
+    }
+
+    /**
+     * Generates the internal product number
+     *
+     * @param string $prefix Type of product-owner
+     * @param string $ownerId Id of Product-owner
+     * @param string $number Number of the product
+     *
+     * @return string
+     */
+    public function generateInternalItemNumber($prefix, $ownerId, $number)
+    {
+        return $prefix . '-' . $ownerId . '-' . $number;
+    }
+
+    /**
      * Fetches a product
      *
-     * @param $id
-     * @param $locale
-     * @return \Sulu\Bundle\ProductBundle\Api\Product
+     * @param int $id
+     * @param string $locale
+     *
      * @throws Exception\ProductNotFoundException
+     *
+     * @return \Sulu\Bundle\ProductBundle\Api\Product
      */
     protected function fetchProduct($id, $locale)
     {
@@ -804,22 +896,9 @@ class ProductManager implements ProductManagerInterface
     }
 
     /**
-     * Generates the internal product number
-     *
-     * @param $prefix Type of product-owner
-     * @param $ownerId Id of Product-owner
-     * @param string $number Number of the product
-     * @return string
-     */
-    public function generateInternalItemNumber($prefix, $ownerId, $number)
-    {
-        return $prefix . '-' . $ownerId . '-' . $number;
-    }
-
-    /**
      * Checks if datetime string is valid
      *
-     * @param $string DateTime string
+     * @param string $dateTimeString
      *
      * @return DateTime
      */
@@ -1756,57 +1835,5 @@ class ProductManager implements ProductManagerInterface
             $product->addPrice($price);
             $price->setProduct($product);
         }
-    }
-
-    /**
-     * Get filters provided by the request
-     *
-     * @param Request $request
-     * @return List $filter
-     */
-    public function getFilters(Request $request)
-    {
-        $filter = array();
-
-        $statuses = $request->get('status');
-        if ($statuses) {
-            $filter['status'] = explode(',', $statuses);
-        }
-
-        $statusIds = $request->get('status_id');
-        if ($statusIds) {
-            $filter['status_id'] = explode(',', $statusIds);
-        }
-
-        $types = $request->get('type');
-        if ($types) {
-            $filter['type_id'] = explode(',', $types);
-        }
-
-        $typeIds = $request->get('type_id');
-        if ($typeIds) {
-            $filter['type_id'] = explode(',', $typeIds);
-        }
-
-        $supplierId = $request->get('supplier_id');
-        if ($supplierId) {
-            $filter['accounts_supplier_id'] = $supplierId;
-        }
-
-        $isDeprecated = $request->get('is_deprecated');
-        if ($isDeprecated !== null) {
-            $filter['is_deprecated'] = $isDeprecated;
-        }
-
-        $parent = $request->get('parent');
-        if ($parent) {
-            $filter['parent'] = ($parent == 'null') ? null : $parent;
-        }
-
-        $categories = $request->get('categories');
-        if ($categories) {
-            $filter['categories'] = ($categories == 'null') ? null : $categories;
-        }
-        return $filter;
     }
 }

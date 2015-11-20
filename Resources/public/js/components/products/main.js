@@ -225,11 +225,20 @@ define([
                 }.bind(this));
 
                 this.sandbox.util.when.apply(null, requests).then(function() {
-                    if (type === 'DELETE') {
-                        this.sandbox.emit('sulu.products.media.removed', medias);
-                    } else if (type === 'POST') {
-                        this.sandbox.emit('sulu.products.media.saved', medias);
-                    }
+                    this.product.fetchLocale(this.options.locale, {
+                        success: function (model) {
+                            this.options.data = this.product;
+                            if (type === 'DELETE') {
+                                this.sandbox.emit('sulu.products.media.removed', medias);
+                            } else if (type === 'POST') {
+                                this.sandbox.emit('sulu.products.media.saved', medias);
+                            }
+                        }.bind(this),
+                        error: function(){
+                            this.sandbox.logger.error("error while fetching product");
+                        }.bind(this)
+                    });
+
                 }.bind(this));
             }
         },

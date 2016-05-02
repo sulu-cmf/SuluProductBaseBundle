@@ -1048,58 +1048,8 @@ class ProductManager implements ProductManagerInterface
             }
         }
 
-        if (isset($data['attributes'])) {
-            $attributeIds = [];
-            foreach ($data['attributes'] as $attributeData) {
-                if (isset($attributeData['attributeId'])) {
-                    $attributeIds[] = $attributeData['attributeId'];
-                }
-            }
-            // Create local array of attributes.
-            $productAttributes = [];
+        $this->processAttributes($data, $product);
 
-            foreach ($product->getAttributes() as $productAttribute) {
-                $productAttributes[$productAttribute->getAttribute()->getId()] = $productAttribute;
-            }
-
-            // Add and change attributes.
-            foreach ($data['attributes'] as $attributeData) {
-                $attributeValue = trim($attributeData['value']);
-                $attributeId = $attributeData['attributeId'];
-
-                // If attribute value is empty do not add.
-                if (!$attributeValue) {
-                    // If already set on product, remove.
-                    if (array_key_exists($attributeId, $productAttributes)) {
-                        $product->getEntity()->removeProductAttribute($productAttribute->getEntity());
-                        $this->em->remove($productAttribute->getEntity());
-                    }
-
-                    continue;
-                }
-
-                if (!array_key_exists($attributeId, $productAttributes)) {
-                    // Product attribute does not exists.
-                    $productAttribute = new ProductAttribute();
-                    $attribute = $this->attributeRepository->find($attributeData['attributeId']);
-                    if (!$attribute) {
-                        throw new ProductDependencyNotFoundException(
-                            self::$attributeEntityName,
-                            $attributeData['attributeId']
-                        );
-                    }
-                    $productAttribute->setAttribute($attribute);
-                    $productAttribute->setValue($attributeValue);
-                    $productAttribute->setProduct($product->getEntity());
-                    $product->addProductAttribute($productAttribute);
-                    $this->em->persist($productAttribute);
-                } else {
-                    // Product attribute exists.
-                    $productAttribute = $productAttributes[$attributeId]->getEntity();
-                    $productAttribute->setValue($attributeValue);
-                }
-            }
-        }
 
         if (array_key_exists('specialPrices', $data)) {
             $specialPricesData = $data['specialPrices'];
@@ -1914,6 +1864,64 @@ class ProductManager implements ProductManagerInterface
         $this->checkDataSet($data, 'type', $create) && $this->checkDataSet($data['type'], 'id', $create);
 
         $this->checkDataSet($data, 'status', $create) && $this->checkDataSet($data['status'], 'id', $create);
+    }
+
+    protected function processAttributes($data, ProductInterface $product)
+    {
+        if (isset($data['attributes'])) {
+            $attributeIds = [];
+            foreach ($data['attributes'] as $attributeData) {
+                if (isset($attributeData['attributeId'])) {
+                    $attributeIds[] = $attributeData['attributeId'];
+                }
+            }
+
+            // Create local array of all currently assigned attributes of product.
+            $productAttributes = [];
+            foreach ($product->getAttributes() as $productAttribute) {
+                $productAttributes[$productAttribute->getAttribute()->getId()] = $productAttribute;
+            }
+
+            // Add and change attributes.
+            foreach ($data['attributes'] as $attributeData) {
+                $attributeValue = trim($attributeData['value']);
+                $attributeId = $attributeData['attributeId'];
+
+                // If attribute value is empty do not add.
+                if (!$attributeValue) {
+                    // If already set on product, remove.
+                    if (array_key_exists($attributeId, $productAttributes)) {
+                        $product->getEntity()->removeProductAttribute($productAttribute->getEntity());
+                        $this->em->remove($productAttribute->getEntity());
+                    }
+
+                    continue;
+                }
+
+                if (!array_key_exists($attributeId, $productAttributes)) {
+                    // Product attribute does not exists.
+                    $productAttribute = new ProductAttribute();
+                    $attribute = $this->attributeRepository->find($attributeData['attributeId']);
+                    if (!$attribute) {
+                        throw new ProductDependencyNotFoundException(
+                            self::$attributeEntityName,
+                            $attributeData['attributeId']
+                        );
+                    }
+                    $productAttribute->setAttribute($attribute);
+                    $productAttribute->setProduct($product->getEntity());
+
+                    $productAttribute->setValue($attributeValue);
+
+                    $product->addProductAttribute($productAttribute);
+                    $this->em->persist($productAttribute);
+                } else {
+                    // Product attribute exists.
+                    $productAttribute = $productAttributes[$attributeId]->getEntity();
+                    $productAttribute->setValue($attributeValue);
+                }
+            }
+        }
     }
 
     /**

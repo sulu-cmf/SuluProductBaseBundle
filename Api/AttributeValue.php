@@ -15,15 +15,11 @@ use Hateoas\Configuration\Annotation\Relation;
 use JMS\Serializer\Annotation\VirtualProperty;
 use JMS\Serializer\Annotation\SerializedName;
 use JMS\Serializer\Annotation\ExclusionPolicy;
-
 use Sulu\Component\Rest\ApiWrapper;
-use Sulu\Component\Security\Authentication\UserInterface;
 use Sulu\Bundle\ProductBundle\Entity\AttributeValueTranslation;
 use Sulu\Bundle\ProductBundle\Entity\AttributeValue as AttributeValueEntity;
 
 /**
- * The product class which will be exported to the API
- *
  * @package Sulu\Bundle\ProductBundle\Api
  * @Relation("self", href="expr('/api/admin/attributes/' ~ object.getId() ~ '/values')")
  * @ExclusionPolicy("all")

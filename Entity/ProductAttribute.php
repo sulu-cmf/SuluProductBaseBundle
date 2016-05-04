@@ -10,60 +10,30 @@
 
 namespace Sulu\Bundle\ProductBundle\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-
-/**
- * ProductAttribute
- */
 class ProductAttribute
 {
     /**
-     * @var string
-     */
-    private $value;
-
-    /**
-     * @var integer
+     * @var int
      */
     private $id;
 
     /**
-     * @var \Sulu\Bundle\ProductBundle\Entity\BaseProduct
+     * @var BaseProduct
      */
     private $product;
 
     /**
-     * @var \Sulu\Bundle\ProductBundle\Entity\Attribute
+     * @var Attribute
      */
     private $attribute;
 
     /**
-     * Set value
-     *
-     * @param string $value
-     * @return ProductAttribute
+     * @var AttributeValue
      */
-    public function setValue($value)
-    {
-        $this->value = $value;
-    
-        return $this;
-    }
+    private $attributeValue;
 
     /**
-     * Get value
-     *
-     * @return string 
-     */
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    /**
-     * Get id
-     *
-     * @return integer 
+     * @return int
      */
     public function getId()
     {
@@ -71,12 +41,11 @@ class ProductAttribute
     }
 
     /**
-     * Set product
+     * @param ProductInterface $product
      *
-     * @param \Sulu\Bundle\ProductBundle\Entity\ProductInterface $product
-     * @return ProductAttribute
+     * @return self
      */
-    public function setProduct(\Sulu\Bundle\ProductBundle\Entity\ProductInterface $product)
+    public function setProduct(ProductInterface $product)
     {
         $this->product = $product;
     
@@ -84,9 +53,7 @@ class ProductAttribute
     }
 
     /**
-     * Get product
-     *
-     * @return \Sulu\Bundle\ProductBundle\Entity\ProductInterface
+     * @return ProductInterface
      */
     public function getProduct()
     {
@@ -94,12 +61,11 @@ class ProductAttribute
     }
 
     /**
-     * Set attribute
+     * @param Attribute $attribute
      *
-     * @param \Sulu\Bundle\ProductBundle\Entity\Attribute $attribute
-     * @return ProductAttribute
+     * @return self
      */
-    public function setAttribute(\Sulu\Bundle\ProductBundle\Entity\Attribute $attribute)
+    public function setAttribute(Attribute $attribute)
     {
         $this->attribute = $attribute;
     
@@ -107,12 +73,30 @@ class ProductAttribute
     }
 
     /**
-     * Get attribute
-     *
-     * @return \Sulu\Bundle\ProductBundle\Entity\Attribute
+     * @return Attribute
      */
     public function getAttribute()
     {
         return $this->attribute;
+    }
+
+    /**
+     * @param AttributeValue $attributeValue
+     *
+     * @return self
+     */
+    public function setAttributeValue(AttributeValue $attributeValue)
+    {
+        $this->attributeValue = $attributeValue;
+
+        return $this;
+    }
+
+    /**
+     * @return AttributeValue
+     */
+    public function getAttributeValue()
+    {
+        return $this->getAttributeValue();
     }
 }

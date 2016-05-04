@@ -12,6 +12,8 @@ namespace Sulu\Bundle\ProductBundle\Product;
 
 use DateTime;
 use Doctrine\Common\Persistence\ObjectManager;
+use Sulu\Bundle\ProductBundle\Entity\AttributeValue;
+use Sulu\Bundle\ProductBundle\Entity\AttributeValueTranslation;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Sulu\Bundle\ContactBundle\Entity\Account;
@@ -1048,7 +1050,7 @@ class ProductManager implements ProductManagerInterface
             }
         }
 
-        $this->processAttributes($data, $product);
+        $this->processAttributes($data, $product, $locale);
 
 
         if (array_key_exists('specialPrices', $data)) {
@@ -1866,7 +1868,16 @@ class ProductManager implements ProductManagerInterface
         $this->checkDataSet($data, 'status', $create) && $this->checkDataSet($data['status'], 'id', $create);
     }
 
-    protected function processAttributes($data, ProductInterface $product)
+    /**
+     * Processes attributes.
+     *
+     * @param array $data
+     * @param ProductInterface $product
+     * @param string $locale
+     *
+     * @throws ProductDependencyNotFoundException
+     */
+    protected function processAttributes(array $data, ProductInterface $product, $locale)
     {
         if (isset($data['attributes'])) {
             $attributeIds = [];
@@ -1911,17 +1922,58 @@ class ProductManager implements ProductManagerInterface
                     $productAttribute->setAttribute($attribute);
                     $productAttribute->setProduct($product->getEntity());
 
-                    $productAttribute->setValue($attributeValue);
+
+                    // TODO: Create new attribute translation.
+//                    $productAttribute->setValue($attributeValue);
+
+                    $this->createAttributeValue($attribute, $attributeValue, $locale);
 
                     $product->addProductAttribute($productAttribute);
                     $this->em->persist($productAttribute);
                 } else {
                     // Product attribute exists.
                     $productAttribute = $productAttributes[$attributeId]->getEntity();
+
+                    // TODO: Adapt existing value.
                     $productAttribute->setValue($attributeValue);
                 }
             }
         }
+    }
+
+    /**
+     * Creates a new attribute value. And its translation in the specified locale.
+     *
+     * @param Attribute $attribute
+     * @param string $value
+     * @param string $locale
+     *
+     * @return AttributeValue
+     */
+    private function createAttributeValue(Attribute $attribute, $value, $locale)
+    {
+        $attributeValue = new AttributeValue();
+        $this->em->persist($attributeValue);
+
+        $attributeValue->setAttribute($attribute);
+        $attributeValue->setSelected(true);
+
+        $this->createAttributeValueTranslation($attributeValue, $value, $locale);
+
+        return $attributeValue;
+    }
+
+    private function createAttributeValueTranslation(AttributeValue $attributeValue, $value, $locale)
+    {
+        $translation = new AttributeValueTranslation();
+        $this->em->persist($translation);
+        $translation->setName($value);
+        $translation->setLocale($locale);
+        $translation->setAttributeValue($attributeValue);
+
+        $attributeValue->addTranslation($translation);
+
+        return $translation;
     }
 
     /**

@@ -11,14 +11,17 @@
 namespace Sulu\Bundle\ProductBundle\Product;
 
 use DateTime;
-use Doctrine\Common\Persistence\ObjectManager;
-use Sulu\Bundle\ProductBundle\Entity\AttributeValue;
-use Sulu\Bundle\ProductBundle\Entity\AttributeValueTranslation;
+use Doctrine\ORM\EntityManager;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Sulu\Bundle\ContactBundle\Entity\Account;
+use Sulu\Bundle\ContactBundle\Entity\AccountRepository;
 use Sulu\Bundle\CategoryBundle\Api\Category;
 use Sulu\Bundle\CategoryBundle\Entity\CategoryRepository;
+use Sulu\Bundle\MediaBundle\Media\Manager\MediaManager;
+use Sulu\Bundle\ProductBundle\Entity\Attribute;
+use Sulu\Bundle\ProductBundle\Entity\AttributeValue;
+use Sulu\Bundle\ProductBundle\Entity\AttributeValueTranslation;
 use Sulu\Bundle\ProductBundle\Api\ProductPrice;
 use Sulu\Bundle\ProductBundle\Api\Status;
 use Sulu\Bundle\ProductBundle\Entity\Status as StatusEntity;
@@ -39,12 +42,6 @@ use Sulu\Bundle\ProductBundle\Product\Exception\ProductChildrenExistException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductDependencyNotFoundException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 use Sulu\Bundle\ProductBundle\Product\Exception\InvalidProductAttributeException;
-use Sulu\Component\Persistence\RelationTrait;
-use Sulu\Component\Rest\Exception\EntityIdAlreadySetException;
-use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
-use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineGroupConcatFieldDescriptor;
-use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescriptor;
-use Sulu\Component\Security\Authentication\UserRepositoryInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductAttribute;
 use Sulu\Bundle\ProductBundle\Entity\SpecialPriceRepository;
 use Sulu\Bundle\ProductBundle\Entity\DeliveryStatusRepository;
@@ -53,8 +50,12 @@ use Sulu\Bundle\ProductBundle\Entity\ProductAttributeRepository;
 use Sulu\Bundle\ProductBundle\Entity\UnitRepository;
 use Sulu\Bundle\ProductBundle\Entity\DeliveryStatus;
 use Sulu\Bundle\ProductBundle\Api\Product;
-use Sulu\Bundle\MediaBundle\Media\Manager\MediaManager;
-use Sulu\Bundle\ContactBundle\Entity\AccountRepository;
+use Sulu\Component\Persistence\RelationTrait;
+use Sulu\Component\Rest\Exception\EntityIdAlreadySetException;
+use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
+use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineGroupConcatFieldDescriptor;
+use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescriptor;
+use Sulu\Component\Security\Authentication\UserRepositoryInterface;
 
 class ProductManager implements ProductManagerInterface
 {
@@ -160,7 +161,7 @@ class ProductManager implements ProductManagerInterface
     protected $mediaManager;
 
     /**
-     * @var ObjectManager
+     * @var EntityManager
      */
     protected $em;
 
@@ -190,7 +191,7 @@ class ProductManager implements ProductManagerInterface
      * @param CategoryRepository $categoryRepository
      * @param UserRepositoryInterface $userRepository
      * @param MediaManager $mediaManager
-     * @param ObjectManager $em
+     * @param EntityManager $em
      * @param AccountRepository $accountRepository
      * @param string $defaultCurrency
      */
@@ -210,7 +211,7 @@ class ProductManager implements ProductManagerInterface
         CategoryRepository $categoryRepository,
         UserRepositoryInterface $userRepository,
         MediaManager $mediaManager,
-        ObjectManager $em,
+        EntityManager $em,
         AccountRepository $accountRepository,
         $defaultCurrency
     ) {
@@ -235,7 +236,7 @@ class ProductManager implements ProductManagerInterface
     }
 
     /**
-     * Returns a list of fieldDescriptors just used for filtering
+     * Returns a list of fieldDescriptors just used for filtering.
      *
      * @return DoctrineFieldDescriptor[]
      */
@@ -714,7 +715,7 @@ class ProductManager implements ProductManagerInterface
     }
 
     /**
-     * Sets product media for api-product
+     * Sets product media for api-product.
      * Otherwise api-media will not contain additional info like url,..
      *
      * @param Product $product
@@ -1050,8 +1051,8 @@ class ProductManager implements ProductManagerInterface
             }
         }
 
-        $this->processAttributes($data, $product, $locale);
-
+        // Process given attributes.
+        $this->processAttributes($data, $product->getEntity(), $locale);
 
         if (array_key_exists('specialPrices', $data)) {
             $specialPricesData = $data['specialPrices'];
@@ -1869,7 +1870,7 @@ class ProductManager implements ProductManagerInterface
     }
 
     /**
-     * Processes attributes.
+     * Processes attributes of data array.
      *
      * @param array $data
      * @param ProductInterface $product
@@ -1889,17 +1890,17 @@ class ProductManager implements ProductManagerInterface
 
             // Create local array of all currently assigned attributes of product.
             $productAttributes = [];
-            foreach ($product->getAttributes() as $productAttribute) {
+            foreach ($product->getProductAttributes() as $productAttribute) {
                 $productAttributes[$productAttribute->getAttribute()->getId()] = $productAttribute;
             }
 
             // Add and change attributes.
             foreach ($data['attributes'] as $attributeData) {
-                $attributeValue = trim($attributeData['value']);
+                $attributeDataValue = trim($attributeData['value']);
                 $attributeId = $attributeData['attributeId'];
 
                 // If attribute value is empty do not add.
-                if (!$attributeValue) {
+                if (!$attributeDataValue) {
                     // If already set on product, remove.
                     if (array_key_exists($attributeId, $productAttributes)) {
                         $product->getEntity()->removeProductAttribute($productAttribute->getEntity());
@@ -1909,36 +1910,68 @@ class ProductManager implements ProductManagerInterface
                     continue;
                 }
 
+                // Product attribute does not exists.
                 if (!array_key_exists($attributeId, $productAttributes)) {
-                    // Product attribute does not exists.
-                    $productAttribute = new ProductAttribute();
-                    $attribute = $this->attributeRepository->find($attributeData['attributeId']);
-                    if (!$attribute) {
-                        throw new ProductDependencyNotFoundException(
-                            self::$attributeEntityName,
-                            $attributeData['attributeId']
-                        );
-                    }
-                    $productAttribute->setAttribute($attribute);
-                    $productAttribute->setProduct($product->getEntity());
-
-
-                    // TODO: Create new attribute translation.
-//                    $productAttribute->setValue($attributeValue);
-
-                    $this->createAttributeValue($attribute, $attributeValue, $locale);
-
-                    $product->addProductAttribute($productAttribute);
-                    $this->em->persist($productAttribute);
+                    $attribute = $this->retrieveAttributeById($attributeId);
+                    // Create new attribute translation.
+                    $attributeValue = $this->createAttributeValue($attribute, $attributeDataValue, $locale);
+                    $productAttribute = $this->createProductAttribute($attribute, $product, $attributeValue);
                 } else {
                     // Product attribute exists.
+                    /** @var ProductAttribute $productAttribute */
                     $productAttribute = $productAttributes[$attributeId]->getEntity();
-
-                    // TODO: Adapt existing value.
-                    $productAttribute->setValue($attributeValue);
+                    $attributeValue = $productAttribute->getAttributeValue();
+                    // Create translation in current locale.
+                    $this->createOrSetAttributeValueTranslation($attributeValue, $attributeDataValue, $locale);
                 }
             }
         }
+    }
+
+    /**
+     * Finds an attribute with the given id. Else throws an Exception.
+     *
+     * @param int $attributeId
+     *
+     * @throws ProductDependencyNotFoundException
+     *
+     * @return Attribute
+     */
+    private function retrieveAttributeById($attributeId)
+    {
+        $attribute = $this->attributeRepository->find($attributeId);
+        if (!$attribute) {
+            throw new ProductDependencyNotFoundException(
+                self::$attributeEntityName,
+                $attributeId
+            );
+        }
+
+        return $attribute;
+    }
+
+    /**
+     * Creates a new ProductAttribute relation.
+     *
+     * @param Attribute $attribute
+     * @param ProductInterface $product
+     * @param AttributeValue $attributeValue
+     *
+     * @return ProductAttribute
+     */
+    private function createProductAttribute(
+        Attribute $attribute,
+        ProductInterface $product,
+        AttributeValue $attributeValue
+    ) {
+        $productAttribute = new ProductAttribute();
+        $this->em->persist($productAttribute);
+        $productAttribute->setAttribute($attribute);
+        $productAttribute->setProduct($product);
+        $productAttribute->setAttributeValue($attributeValue);
+        $product->addProductAttribute($productAttribute);
+
+        return $productAttribute;
     }
 
     /**
@@ -1958,22 +1991,45 @@ class ProductManager implements ProductManagerInterface
         $attributeValue->setAttribute($attribute);
         $attributeValue->setSelected(true);
 
-        $this->createAttributeValueTranslation($attributeValue, $value, $locale);
+        $this->createOrSetAttributeValueTranslation($attributeValue, $value, $locale);
 
         return $attributeValue;
     }
 
-    private function createAttributeValueTranslation(AttributeValue $attributeValue, $value, $locale)
+    /**
+     * Checks if AttributeValue already contains translation in given locale
+     * or creates a new one.
+     *
+     * @param AttributeValue $attributeValue
+     * @param string $value
+     * @param string $locale
+     *
+     * @return AttributeValueTranslation
+     */
+    private function createOrSetAttributeValueTranslation(AttributeValue $attributeValue, $value, $locale)
     {
-        $translation = new AttributeValueTranslation();
-        $this->em->persist($translation);
-        $translation->setName($value);
-        $translation->setLocale($locale);
-        $translation->setAttributeValue($attributeValue);
+        // Check if translation already exists for given locale.
+        $attributeValueTranslation = null;
+        /** @var AttributeValueTranslation $translation */
+        foreach ($attributeValue->getTranslations() as $translation) {
+            if ($translation->getLocale() === $locale) {
+                $attributeValueTranslation = $translation;
+            }
+        }
 
-        $attributeValue->addTranslation($translation);
+        if (!$attributeValueTranslation) {
+            // Create a new value translation.
+            $attributeValueTranslation = new AttributeValueTranslation();
+            $this->em->persist($attributeValueTranslation);
+            $attributeValueTranslation->setLocale($locale);
 
-        return $translation;
+            $attributeValueTranslation->setAttributeValue($attributeValue);
+            $attributeValue->addTranslation($attributeValueTranslation);
+        }
+
+        $attributeValueTranslation->setName($value);
+
+        return $attributeValueTranslation;
     }
 
     /**

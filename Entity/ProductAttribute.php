@@ -97,6 +97,6 @@ class ProductAttribute
      */
     public function getAttributeValue()
     {
-        return $this->getAttributeValue();
+        return $this->attributeValue;
     }
 }

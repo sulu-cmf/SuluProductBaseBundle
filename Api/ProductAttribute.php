@@ -10,26 +10,19 @@
 
 namespace Sulu\Bundle\ProductBundle\Api;
 
-use Hateoas\Configuration\Annotation\Relation;
-
 use JMS\Serializer\Annotation\VirtualProperty;
 use JMS\Serializer\Annotation\SerializedName;
 use JMS\Serializer\Annotation\ExclusionPolicy;
-
 use Sulu\Bundle\ProductBundle\Entity\ProductAttribute as ProductAttributeEntity;
 use Sulu\Component\Rest\ApiWrapper;
-use Sulu\Bundle\ProductBundle\Api\Attribute;
 
 /**
- * The ProductAttribute class which will be exported to the API
- *
- * @package Sulu\Bundle\ProductBundle\Api
  * @ExclusionPolicy("all")
  */
 class ProductAttribute extends ApiWrapper
 {
     /**
-     * @param AttributeEntity $entity
+     * @param ProductAttributeEntity $entity
      * @param string $locale
      */
     public function __construct(ProductAttributeEntity $entity, $locale)
@@ -39,10 +32,9 @@ class ProductAttribute extends ApiWrapper
     }
 
     /**
-     * Returns the id of the Attribute
-     *
      * @VirtualProperty
      * @SerializedName("id")
+     *
      * @return int
      */
     public function getId()
@@ -51,21 +43,18 @@ class ProductAttribute extends ApiWrapper
     }
 
     /**
-     * Returns the value
-     *
      * @VirtualProperty
      * @SerializedName("value")
-     * @return string
+     *
+     * @return AttributeValue
      */
-    public function getValue()
+    public function getAttributeValue()
     {
-        return $this->entity->getValue();
+        return new AttributeValue($this->entity->getAttributeValue(), $this->locale);
     }
 
     /**
-     * Returns the attribute object
-     *
-     * @return Sulu\Bundle\ProductBundle\Api\Attribute
+     * @return Attribute
      */
     public function getAttribute()
     {
@@ -73,11 +62,10 @@ class ProductAttribute extends ApiWrapper
     }
 
     /**
-     * Returns the attribute name
-     *
-     * @return Sulu\Bundle\ProductBundle\Api\Attribute
      * @VirtualProperty
      * @SerializedName("attributeName")
+     *
+     * @return sting
      */
     public function getAttributeName()
     {
@@ -85,9 +73,7 @@ class ProductAttribute extends ApiWrapper
     }
 
     /**
-     * Returns the attribute type
-     *
-     * @return Sulu\Bundle\ProductBundle\Api\AttributeType
+     * @return AttributeType
      */
     public function getAttributeType()
     {
@@ -95,11 +81,10 @@ class ProductAttribute extends ApiWrapper
     }
 
     /**
-     * Returns the attribute type name
-     *
-     * @return Sulu\Bundle\ProductBundle\Api\AttributeType
      * @VirtualProperty
      * @SerializedName("attributeTypeName")
+     *
+     * @return string
      */
     public function getAttributeTypeName()
     {
@@ -107,11 +92,10 @@ class ProductAttribute extends ApiWrapper
     }
 
     /**
-     * Returns the attribute id
-     *
-     * @return Sulu\Bundle\ProductBundle\Api\Attribute
      * @VirtualProperty
      * @SerializedName("attributeId")
+     *
+     * @return int
      */
     public function getAttributeId()
     {

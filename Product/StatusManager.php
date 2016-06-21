@@ -30,8 +30,8 @@ class StatusManager
     }
 
     /**
-     * @param $locale
-     * @return null|Status[]
+     * @param string $locale
+     * @return null|self[]
      */
     public function findAll($locale)
     {
@@ -45,5 +45,15 @@ class StatusManager
         );
 
         return $statuses;
+    }
+
+    /**
+     * @param integer $id
+     *
+     * @return null|self
+     */
+    public function find($id)
+    {
+        return $this->statusRepository->find($id);
     }
 } 

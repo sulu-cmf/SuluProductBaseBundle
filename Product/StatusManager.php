@@ -47,14 +47,4 @@ class StatusManager
 
         return $statuses;
     }
-
-    /**
-     * @param int $id
-     *
-     * @return null|Status
-     */
-    public function findById($id)
-    {
-        return $this->statusRepository->find($id);
-    }
 } 

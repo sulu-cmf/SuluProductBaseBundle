@@ -31,7 +31,8 @@ class StatusManager
 
     /**
      * @param string $locale
-     * @return null|self[]
+     *
+     * @return null|Status[]
      */
     public function findAll($locale)
     {
@@ -50,9 +51,9 @@ class StatusManager
     /**
      * @param integer $id
      *
-     * @return null|self
+     * @return null|Status
      */
-    public function find($id)
+    public function findById($id)
     {
         return $this->statusRepository->find($id);
     }

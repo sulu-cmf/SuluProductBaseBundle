@@ -49,7 +49,7 @@ class StatusManager
     }
 
     /**
-     * @param integer $id
+     * @param int $id
      *
      * @return null|Status
      */

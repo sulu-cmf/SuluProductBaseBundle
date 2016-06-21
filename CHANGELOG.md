@@ -1,6 +1,7 @@
 CHANGELOG for Sulu Product Bundle
 =================================
 * dev-develop
+    * ENHANCEMENT Added method 'find' to StatusManager
     * ENHANCEMENT Cleanups in ProductPriceManager
 
 * 0.10.3 (2016-06-15)

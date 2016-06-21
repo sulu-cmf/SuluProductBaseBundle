@@ -30,7 +30,8 @@ class StatusManager
     }
 
     /**
-     * @param $locale
+     * @param string $locale
+     *
      * @return null|Status[]
      */
     public function findAll($locale)

@@ -3,6 +3,7 @@ CHANGELOG for Sulu Product Bundle
 
 * dev-develop
 
+    * FEATURE     Added many-to-many releation `variantAttributes` between product and attributes
     * FEATURE     Implemented new product type 'Variant'
     * ENHANCEMENT Removed product type translations from database
     * FEATURE     Moved price formatter service from pricing-bundle to product bundle to remove dependency

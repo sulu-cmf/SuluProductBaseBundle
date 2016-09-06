@@ -1,6 +1,7 @@
 <?php
+
 /*
- * This file is part of the Sulu CMF.
+ * This file is part of Sulu.
  *
  * (c) MASSIVE ART WebServices GmbH
  *
@@ -23,8 +24,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * This controller is responsible for managing variants to a specific product
- * @package Sulu\Bundle\ProductBundle\Controller
+ * This controller is responsible for managing variants to a specific product.
  */
 class VariantController extends RestController implements ClassResourceInterface
 {
@@ -33,30 +33,21 @@ class VariantController extends RestController implements ClassResourceInterface
     protected static $entityKey = 'products';
 
     /**
-     * Returns the manager for products
+     * Retrieves and shows the variant with the given ID for the parent product.
      *
-     * @return ProductManagerInterface
-     */
-    private function getManager()
-    {
-        return $this->get('sulu_product.product_manager');
-    }
-
-    /**
-     * Retrieves and shows the variant entIdwith the given ID for the parent product
+     * @param Request $request
+     * @param int $parentId
+     * @param int $variantId
      *
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * @param integer $parentId
-     * @param integer $id product ID
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return Response
      */
-    public function getAction(Request $request, $parentId, $id)
+    public function getAction(Request $request, $parentId, $variantId)
     {
         $locale = $this->getLocale($request);
         $view = $this->responseGetById(
-            $id,
+            $variantId,
             function ($id) use ($locale, $parentId) {
-                $product = $this->getManager()->findByIdAndLocale($id, $locale);
+                $product = $this->getProductManager()->findByIdAndLocale($id, $locale);
 
                 if ($product !== null && $product->getParent() && $product->getParent()->getId() == $parentId) {
                     return $product;
@@ -70,9 +61,11 @@ class VariantController extends RestController implements ClassResourceInterface
     }
 
     /**
-     * Returns a list of products
+     * Returns a list of product variants for the requested product.
+     *
      * @param Request $request
-     * @param $parentId
+     * @param int $parentId
+     *
      * @return Response
      */
     public function cgetAction(Request $request, $parentId)
@@ -86,7 +79,7 @@ class VariantController extends RestController implements ClassResourceInterface
 
             $listBuilder = $factory->create(self::$entityName);
 
-            $fieldDescriptors = $this->getManager()->getFieldDescriptors($this->getLocale($request));
+            $fieldDescriptors = $this->getProductManager()->getFieldDescriptors($this->getLocale($request));
 
             $restHelper->initializeListBuilder(
                 $listBuilder,
@@ -94,9 +87,6 @@ class VariantController extends RestController implements ClassResourceInterface
             );
 
             $listBuilder->where($fieldDescriptors['parent'], $parentId);
-
-            // TODO, should only be added if "categories" are requested
-            $listBuilder->addGroupBy($fieldDescriptors['id']);
 
             $list = new ListRepresentation(
                 $listBuilder->execute(),
@@ -109,7 +99,7 @@ class VariantController extends RestController implements ClassResourceInterface
             );
         } else {
             $list = new CollectionRepresentation(
-                $this->getManager()->findAllByLocale($this->getLocale($request)),
+                $this->getProductManager()->findAllByLocale($this->getLocale($request)),
                 self::$entityKey
             );
         }
@@ -120,15 +110,21 @@ class VariantController extends RestController implements ClassResourceInterface
     }
 
     /**
-     * Adds a new variant to this product
+     * Adds a new variant to given product.
+     *
      * @param Request $request
-     * @param $parentId
+     * @param int $parentId
+     *
      * @return Response
      */
     public function postAction(Request $request, $parentId)
     {
         try {
-            $variant = $this->getManager()->addVariant($parentId, $request->get('id'), $this->getLocale($request));
+            $variant = $this->getProductManager()->addVariant(
+                $parentId,
+                $request->get('id'),
+                $this->getLocale($request)
+            );
 
             $view = $this->view($variant, 200);
         } catch (ProductNotFoundException $exc) {
@@ -140,16 +136,17 @@ class VariantController extends RestController implements ClassResourceInterface
     }
 
     /**
-     * Removes a variant from a product
-     * @param Request $request
-     * @param $parentId
-     * @param $id
+     * Removes a variant of product.
+     *
+     * @param int $parentId
+     * @param int $variantId
+     *
      * @return Response
      */
-    public function deleteAction(Request $request, $parentId, $id)
+    public function deleteAction($parentId, $variantId)
     {
         try {
-            $this->getManager()->removeVariant($parentId, $id);
+            $this->getProductManager()->removeVariant($parentId, $variantId);
 
             $view = $this->view(null, 204);
         } catch (ProductNotFoundException $exc) {
@@ -158,5 +155,13 @@ class VariantController extends RestController implements ClassResourceInterface
         }
 
         return $this->handleView($view);
+    }
+
+    /**
+     * @return ProductManagerInterface
+     */
+    private function getProductManager()
+    {
+        return $this->get('sulu_product.product_manager');
     }
 } 

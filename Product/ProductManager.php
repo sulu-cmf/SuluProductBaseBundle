@@ -1836,47 +1836,6 @@ class ProductManager implements ProductManagerInterface
     /**
      * {@inheritDoc}
      */
-    public function addVariant($parentId, $variantId, $locale)
-    {
-        $variant = $this->productRepository->findById($variantId);
-
-        if (!$variant) {
-            throw new ProductNotFoundException($variantId);
-        }
-
-        $parent = $this->productRepository->findById($parentId);
-
-        if (!$parent) {
-            throw new ProductNotFoundException($parentId);
-        }
-
-        $variant->setParent($parent);
-
-        $this->em->flush();
-
-        return $this->productFactory->createApiEntity($variant, $locale);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function removeVariant($parentId, $variantId)
-    {
-        $variant = $this->productRepository->findById($variantId);
-
-        if (!$variant || $variant->getParent()->getId() != $parentId) {
-            // TODO think about better exception
-            throw new ProductNotFoundException($variantId);
-        }
-
-        $variant->setParent(null);
-
-        $this->em->flush();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     protected function singleDelete($id)
     {
         // id must be an integer

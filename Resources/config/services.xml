@@ -22,6 +22,7 @@
         <parameter key="sulu_product.country_tax_repository.class">Sulu\Bundle\ProductBundle\Entity\CountryTaxRepository</parameter>
         <parameter key="sulu_product.currency_repository.class">Sulu\Bundle\ProductBundle\Entity\CurrencyRepository</parameter>
         <parameter key="sulu_product.product_manager.class">Sulu\Bundle\ProductBundle\Product\ProductManager</parameter>
+        <parameter key="sulu_product.product_variant_manager.class">Sulu\Bundle\ProductBundle\Product\ProductVariantManager</parameter>
         <parameter key="sulu_product.product_addons_manager.class">Sulu\Bundle\ProductBundle\Product\ProductAddonManager</parameter>
         <parameter key="sulu_product.product_locale_manager.class">Sulu\Bundle\ProductBundle\Product\ProductLocaleManager</parameter>
         <parameter key="sulu_product.attribute_manager.class">Sulu\Bundle\ProductBundle\Product\AttributeManager</parameter>
@@ -148,6 +149,10 @@
             <argument type="service" id="sulu_contact.account_repository"/>
             <argument type="service" id="sulu_tag.tag_repository"/>
             <argument>%sulu_product.default_currency%</argument>
+        </service>
+        <service id="sulu_product.product_variant_manager" class="%sulu_product.product_variant_manager.class%">
+            <argument type="service" id="sulu_product.product_manager"/>
+            <argument type="service" id="sulu_product.product_repository"/>
         </service>
         <service id="sulu_product.attribute_manager" class="%sulu_product.attribute_manager.class%">
             <argument type="service" id="sulu_product.attribute_repository"/>

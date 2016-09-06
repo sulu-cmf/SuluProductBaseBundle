@@ -19,7 +19,7 @@ interface ProductManagerInterface
     /**
      * Returns the FieldDescriptors for the products.
      *
-     * @param $locale
+     * @param int $locale
      *
      * @return DoctrineFieldDescriptor[]
      */
@@ -60,8 +60,8 @@ interface ProductManagerInterface
      *
      * @param array $data The data for the product to save
      * @param string $locale The locale in which the product should be saved
-     * @param integer $userId The id of the user who called this action
-     * @param integer $id The id of the product, if the product is already saved in the database
+     * @param int $userId The id of the user who called this action
+     * @param int|null $id The id of the product, if the product is already saved in the database
      *
      * @return Product
      */
@@ -72,8 +72,8 @@ interface ProductManagerInterface
      *
      * @param array $data The data for the product to save
      * @param string $locale The locale in which the product should be saved
-     * @param integer $userId The id of the user who called this action
-     * @param integer $id The id of the product, if the product is already saved in the database
+     * @param int $userId The id of the user who called this action
+     * @param int $id The id of the product, if the product is already saved in the database
      *
      * @throws Exception\ProductNotFoundException
      *
@@ -82,29 +82,10 @@ interface ProductManagerInterface
     public function partialUpdate(array $data, $locale, $userId, $id);
 
     /**
-     * Adds a variant to a specific product.
-     *
-     * @param integer $parentId The id of the product, to which the variant is added
-     * @param integer $variantId The id of the product, which is added to the other as a variant
-     * @param string $locale The locale to load
-     *
-     * @return Product The new variant
-     */
-    public function addVariant($parentId, $variantId, $locale);
-
-    /**
-     * Removes a variant from a specific product.
-     *
-     * @param integer $parentId The id of the product, from which the variant is removed
-     * @param integer $variantId The id of the product, which is removed from the other
-     */
-    public function removeVariant($parentId, $variantId);
-
-    /**
      * Deletes the given product.
      *
-     * @param integer $id The id of the product to delete
-     * @param int $userId ID of the user that deletes the product
+     * @param int $id The id of the product to delete
+     * @param int|null $userId ID of the user that deletes the product
      * @param bool $flush Defines if a flush should be performed
      */
     public function delete($id, $userId = null, $flush = true);

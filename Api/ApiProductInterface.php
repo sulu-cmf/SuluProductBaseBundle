@@ -11,6 +11,9 @@
 
 namespace Sulu\Bundle\ProductBundle\Api;
 
+/**
+ * Interface for Product Api Objects.
+ */
 interface ApiProductInterface
 {
     // TODO: implement

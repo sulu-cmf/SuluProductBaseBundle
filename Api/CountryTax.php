@@ -15,7 +15,6 @@ use JMS\Serializer\Annotation\ExclusionPolicy;
 use JMS\Serializer\Annotation\SerializedName;
 use JMS\Serializer\Annotation\VirtualProperty;
 use Sulu\Bundle\ContactBundle\Entity\Country;
-
 use Sulu\Bundle\ProductBundle\Entity\CountryTax as CountryTaxEntity;
 use Sulu\Component\Rest\ApiWrapper;
 

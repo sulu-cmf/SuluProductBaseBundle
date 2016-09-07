@@ -119,11 +119,15 @@ class VariantController extends RestController implements ClassResourceInterface
      */
     public function postAction(Request $request, $parentId)
     {
+        $requestData = $request->request->all();
+        $userId = $this->getUser()->getId();
+
         try {
             $variant = $this->getProductManager()->addVariant(
                 $parentId,
-                $request->get('id'),
-                $this->getLocale($request)
+                $requestData,
+                $this->getLocale($request),
+                $userId
             );
 
             $view = $this->view($variant, 200);

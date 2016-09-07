@@ -19,18 +19,28 @@ interface ProductVariantManagerInterface
      * Adds a variant to a specific product.
      *
      * @param int $parentId The id of the product, to which the variant is added
-     * @param int $variantId The id of the product, which is added to the other as a variant
+     * @param $variantData Data that is used for creating variant
      * @param string $locale The locale to load
      *
-     * @return Product The new variant
+     * @return Product
      */
-    public function addVariant($parentId, $variantId, $locale);
+    public function createVariant($parentId, $variantData, $locale, $userId);
 
     /**
-     * Removes a variant from a specific product.
+     * Updates data of an existing variant.
      *
-     * @param int $parentId The id of the product, from which the variant is removed
-     * @param int $variantId The id of the product, which is removed from the other
+     * @param int $variantId The id of the product, which is added to the other as a variant
+     * @param $variantData Data that overwrites existing data of product
+     * @param string $locale The locale to load
+     *
+     * @return Product
      */
-    public function removeVariant($parentId, $variantId);
+    public function updateVariant($variantId, $variantData, $locale);
+
+    /**
+     * Deletes the given variant from database.
+     *
+     * @param int $variantId The id of the product, which is removed
+     */
+    public function deleteVariant($variantId);
 }

@@ -1,6 +1,7 @@
 <?php
+
 /*
- * This file is part of the Sulu CMF.
+ * This file is part of Sulu.
  *
  * (c) MASSIVE ART WebServices GmbH
  *
@@ -12,16 +13,22 @@ namespace Sulu\Bundle\ProductBundle\Tests\Functional\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Sulu\Bundle\ProductBundle\Api\Product;
-use Sulu\Bundle\ProductBundle\Entity\Product as ProductEntity;
 use Sulu\Bundle\ProductBundle\Entity\Status;
 use Sulu\Bundle\ProductBundle\Entity\StatusTranslation;
 use Sulu\Bundle\ProductBundle\Entity\Type;
-use Sulu\Bundle\ProductBundle\Entity\TypeTranslation;
 use Sulu\Bundle\TestBundle\Testing\SuluTestCase;
 use Symfony\Bundle\FrameworkBundle\Client;
 
 class VariantControllerTest extends SuluTestCase
 {
+    /**
+     * @var string
+     */
+    const REQUEST_LOCALE = 'en';
+
+    /**
+     * @var array
+     */
     protected static $entities;
 
     /**
@@ -54,8 +61,14 @@ class VariantControllerTest extends SuluTestCase
      */
     protected $productWithVariantsType;
 
+    /**
+     * @var array
+     */
     private $productVariants = [];
 
+    /**
+     * {@inheritdoc}
+     */
     public function setUp()
     {
         $this->em = $this->getEntityManager();
@@ -64,35 +77,29 @@ class VariantControllerTest extends SuluTestCase
         $this->client = $this->createAuthenticatedClient();
     }
 
+    /**
+     * Creates initial data for test.
+     */
     public function createFixtures()
     {
         $this->productType = new Type();
-        $productTypeTranslation = new TypeTranslation();
-        $productTypeTranslation->setLocale('en');
-        $productTypeTranslation->setName('Product');
-        $productTypeTranslation->setType($this->productType);
+        $this->productType->setTranslationKey('Type1');
         $this->em->persist($this->productType);
-        $this->em->persist($productTypeTranslation);
 
         $this->productWithVariantsType = new Type();
-        $productWithVariantsTypeTranslation = new TypeTranslation();
-        $productWithVariantsTypeTranslation->setLocale('en');
-        $productWithVariantsTypeTranslation->setName('Product with Variants');
-        $productWithVariantsTypeTranslation->setType($this->productWithVariantsType);
-
+        $this->productWithVariantsType->setTranslationKey('Type2');
         $this->em->persist($this->productWithVariantsType);
-        $this->em->persist($productWithVariantsTypeTranslation);
 
         $this->activeStatus = new Status();
         $activeStatusTranslation = new StatusTranslation();
-        $activeStatusTranslation->setLocale('en');
+        $activeStatusTranslation->setLocale(self::REQUEST_LOCALE);
         $activeStatusTranslation->setName('Active');
         $activeStatusTranslation->setStatus($this->activeStatus);
 
         $this->em->persist($this->activeStatus);
         $this->em->persist($activeStatusTranslation);
 
-        $this->product = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), 'en');
+        $this->product = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
         $this->product->setName('Product with Variants');
         $this->product->setNumber('1');
         $this->product->setStatus($this->activeStatus);
@@ -100,7 +107,7 @@ class VariantControllerTest extends SuluTestCase
 
         $this->em->persist($this->product->getEntity());
 
-        $productVariant1 = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), 'en');
+        $productVariant1 = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
         $productVariant1->setName('Productvariant');
         $productVariant1->setNumber('2');
         $productVariant1->setStatus($this->activeStatus);
@@ -109,7 +116,7 @@ class VariantControllerTest extends SuluTestCase
         $this->em->persist($productVariant1->getEntity());
         $this->productVariants[] = $productVariant1;
 
-        $productVariant2 = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), 'en');
+        $productVariant2 = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
         $productVariant2->setName('Another Productvariant');
         $productVariant2->setNumber('3');
         $productVariant2->setStatus($this->activeStatus);
@@ -118,7 +125,7 @@ class VariantControllerTest extends SuluTestCase
         $this->em->persist($productVariant2->getEntity());
         $this->productVariants[] = $productVariant2;
 
-        $anotherProduct = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), 'en');
+        $anotherProduct = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
         $anotherProduct->setName('Another product');
         $anotherProduct->setNumber('4');
         $anotherProduct->setStatus($this->activeStatus);
@@ -132,7 +139,7 @@ class VariantControllerTest extends SuluTestCase
     {
         $this->client->request(
             'GET',
-            '/api/products/' . $this->product->getId() . '/variants?flat=true'
+            '/api/products/' . $this->product->getId() . '/variants?flat=true&locale=' . self::REQUEST_LOCALE
         );
         $response = json_decode($this->client->getResponse()->getContent());
 
@@ -147,7 +154,7 @@ class VariantControllerTest extends SuluTestCase
         $this->client->request(
             'POST',
             '/api/products/' . $this->product->getId() . '/variants',
-            array('id' => $this->productVariants[0]->getId())
+            ['id' => $this->productVariants[0]->getId()]
         );
 
         $response = json_decode($this->client->getResponse()->getContent());
@@ -155,7 +162,7 @@ class VariantControllerTest extends SuluTestCase
         $this->assertEquals('2', $response->number);
         $this->assertEquals('1', $response->parent->number);
 
-        $this->client->request('GET', '/api/products/'. $this->productVariants[0]->getId());
+        $this->client->request('GET', '/api/products/' . $this->productVariants[0]->getId());
 
         $response = json_decode($this->client->getResponse()->getContent());
 
@@ -164,7 +171,7 @@ class VariantControllerTest extends SuluTestCase
 
     public function testPostWithNotExistingParent()
     {
-        $this->client->request('POST', '/api/products/3/variants', array('id' => $this->productVariants[0]->getId()));
+        $this->client->request('POST', '/api/products/3/variants', ['id' => $this->productVariants[0]->getId()]);
 
         $response = json_decode($this->client->getResponse()->getContent());
 
@@ -177,7 +184,7 @@ class VariantControllerTest extends SuluTestCase
 
     public function testPostWithNotExistingVariant()
     {
-        $this->client->request('POST', '/api/products/'.$this->product->getId().'/variants', array('id' => 2));
+        $this->client->request('POST', '/api/products/' . $this->product->getId() . '/variants', ['id' => 2]);
 
         $response = json_decode($this->client->getResponse()->getContent());
 

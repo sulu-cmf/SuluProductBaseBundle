@@ -138,7 +138,7 @@ class Product extends BaseProduct
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getTranslation($locale)
     {

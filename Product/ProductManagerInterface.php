@@ -1,6 +1,7 @@
 <?php
+
 /*
- * This file is part of the Sulu CMS.
+ * This file is part of Sulu.
  *
  * (c) MASSIVE ART WebServices GmbH
  *
@@ -43,7 +44,7 @@ interface ProductManagerInterface
      *
      * @return Product[]
      */
-    public function findAllByLocale($locale, $filter = array());
+    public function findAllByLocale($locale, $filter = []);
 
    /**
     * Returns all products in the given locale and one of the ids.
@@ -85,7 +86,7 @@ interface ProductManagerInterface
      * Deletes the given product.
      *
      * @param int $id The id of the product to delete
-     * @param int|null $userId ID of the user that deletes the product
+     * @param int $userId ID of the user that deletes the product
      * @param bool $flush Defines if a flush should be performed
      */
     public function delete($id, $userId = null, $flush = true);

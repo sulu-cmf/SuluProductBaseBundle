@@ -1,5 +1,5 @@
-SuluProductBundle [![Build Status](https://travis-ci.org/sulu/SuluProductBundle.svg?branch=develop)](https://travis-ci.org/sulu/SuluProductBundle)
-=================
+SuluProductBundle [![Build Status](https://travis-ci.org/sulu/SuluProductBundle.svg?branch=develop)](https://travis-ci.org/sulu/SuluProductBundle) [![StyleCI](https://styleci.io/repos/17173120/shield)](https://styleci.io/repos/17173120)
+============================================================================================================================================================================================================================================
 
 # Installation
 
@@ -14,7 +14,6 @@ Add the following to your application kernel:
 ```
 // Product bundle
 new Sulu\Bundle\ProductBundle\SuluProductBundle(),
-new Sulu\Bundle\PricingBundle\SuluPricingBundle(),
 ```
 
 Add the following to your `admin/routing.yml`:

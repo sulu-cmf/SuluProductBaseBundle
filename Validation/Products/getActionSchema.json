@@ -1,0 +1,14 @@
+{
+    "title": "Put setting schema",
+    "type": "object",
+    "properties": {
+        "locale": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+        }
+    },
+    "required": [
+        "locale"
+    ]
+}

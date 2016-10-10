@@ -11,7 +11,6 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
-use Sulu\Bundle\ProductBundle\Api\Product;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 
 class ProductVariantManager implements ProductVariantManagerInterface
@@ -33,8 +32,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
     public function __construct(
         ProductManagerInterface $productManager,
         ProductRepositoryInterface $productRepository
-    )
-    {
+    ) {
         $this->productManager = $productManager;
         $this->productRepository = $productRepository;
     }
@@ -42,23 +40,19 @@ class ProductVariantManager implements ProductVariantManagerInterface
     /**
      * {@inheritDoc}
      */
-    public function createVariant($parentId, $variantData, $locale, $userId)
+    public function createVariant($parentId, array $variantData, $locale, $userId)
     {
-//        $variant = $this->productRepository->findById($variantId);
-
-//        if (!$variant) {
-//            throw new ProductNotFoundException($variantId);
-//        }
-//
-//        $variant = $this->productManager->save($variantData, $locale, $userId);
-//
+        // Check if parent product exists.
         $parent = $this->productRepository->findById($parentId);
-
         if (!$parent) {
             throw new ProductNotFoundException($parentId);
         }
 
-//        $variant->setParent($parent);
+        // Create variant product by setting variant data.
+        $variant = $this->productRepository->createNew();
+
+        // Set parent.
+        $variant->setParent($parent);
 //
 //        $this->em->flush();
 //
@@ -85,8 +79,17 @@ class ProductVariantManager implements ProductVariantManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function updateVariant($variantId, $variantData, $locale)
+    public function updateVariant($variantId, array $variantData, $locale, $userId)
     {
         // TODO: Implement updateVariant() method.
+    }
+
+    /**
+     * @param ProductInterface $variant
+     * @param array $variantData
+     */
+    private function mapDataToVariant(ProductInterface $variant, array $variantData)
+    {
+
     }
 }

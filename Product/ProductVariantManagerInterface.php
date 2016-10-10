@@ -11,7 +11,7 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
-use Sulu\Bundle\ProductBundle\Api\Product;
+use Sulu\Bundle\ProductBundle\Api\ApiProductInterface;
 
 interface ProductVariantManagerInterface
 {
@@ -19,23 +19,25 @@ interface ProductVariantManagerInterface
      * Adds a variant to a specific product.
      *
      * @param int $parentId The id of the product, to which the variant is added
-     * @param $variantData Data that is used for creating variant
+     * @param array $variantData Data that is used for creating variant
      * @param string $locale The locale to load
+     * @param int $userId
      *
-     * @return Product
+     * @return ApiProductInterface
      */
-    public function createVariant($parentId, $variantData, $locale, $userId);
+    public function createVariant($parentId, array $variantData, $locale, $userId);
 
     /**
      * Updates data of an existing variant.
      *
      * @param int $variantId The id of the product, which is added to the other as a variant
-     * @param $variantData Data that overwrites existing data of product
+     * @param array $variantData Data that overwrites existing data of product
      * @param string $locale The locale to load
+     * @param int $userId
      *
-     * @return Product
+     * @return ApiProductInterface
      */
-    public function updateVariant($variantId, $variantData, $locale);
+    public function updateVariant($variantId, array $variantData, $locale, $userId);
 
     /**
      * Deletes the given variant from database.

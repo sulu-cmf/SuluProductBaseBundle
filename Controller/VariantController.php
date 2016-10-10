@@ -15,6 +15,7 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use Hateoas\Representation\CollectionRepresentation;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 use Sulu\Bundle\ProductBundle\Product\ProductManagerInterface;
+use Sulu\Bundle\ProductBundle\Product\ProductVariantManagerInterface;
 use Sulu\Component\Rest\Exception\EntityNotFoundException;
 use Sulu\Component\Rest\ListBuilder\Doctrine\DoctrineListBuilderFactory;
 use Sulu\Component\Rest\ListBuilder\ListRepresentation;
@@ -123,7 +124,7 @@ class VariantController extends RestController implements ClassResourceInterface
         $userId = $this->getUser()->getId();
 
         try {
-            $variant = $this->getProductManager()->addVariant(
+            $variant = $this->getProductVariantManager()->createVariant(
                 $parentId,
                 $requestData,
                 $this->getLocale($request),
@@ -150,7 +151,7 @@ class VariantController extends RestController implements ClassResourceInterface
     public function deleteAction($parentId, $variantId)
     {
         try {
-            $this->getProductManager()->removeVariant($parentId, $variantId);
+            $this->getProductVariantManager()->deleteVariant($parentId, $variantId);
 
             $view = $this->view(null, 204);
         } catch (ProductNotFoundException $exc) {
@@ -167,5 +168,13 @@ class VariantController extends RestController implements ClassResourceInterface
     private function getProductManager()
     {
         return $this->get('sulu_product.product_manager');
+    }
+
+    /**
+     * @return ProductVariantManagerInterface
+     */
+    private function getProductVariantManager()
+    {
+        return $this->get('sulu_product.product_variant_manager');
     }
 } 

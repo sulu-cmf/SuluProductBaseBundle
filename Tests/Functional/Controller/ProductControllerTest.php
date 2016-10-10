@@ -28,7 +28,6 @@ use Sulu\Bundle\ProductBundle\Entity\DeliveryStatus;
 use Sulu\Bundle\ProductBundle\Entity\DeliveryStatusTranslation;
 use Sulu\Bundle\ProductBundle\Entity\Product;
 use Sulu\Bundle\ProductBundle\Entity\ProductAttribute;
-use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductPrice;
 use Sulu\Bundle\ProductBundle\Entity\ProductTranslation;
 use Sulu\Bundle\ProductBundle\Entity\SpecialPrice;
@@ -256,13 +255,13 @@ class ProductControllerTest extends SuluTestCase
     private $client;
 
     /**
-     * @param ProductInterface $product
+     * @param int $productId
      *
      * @return string
      */
-    public function getGetUrlForProduct(ProductInterface $product)
+    public static function getGetUrlForProduct($productId)
     {
-        return '/api/products/' . $product->getId() . '?locale=en';
+        return '/api/products/' . $productId . '?locale=en';
     }
 
     /**
@@ -579,7 +578,7 @@ class ProductControllerTest extends SuluTestCase
         $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
 
         // Check successful validation.
-        $this->client->request('GET', $this->getGetUrlForProduct($this->product1));
+        $this->client->request('GET', static::getGetUrlForProduct($this->product1->getId()));
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
     }
 
@@ -588,7 +587,7 @@ class ProductControllerTest extends SuluTestCase
      */
     public function testGetById()
     {
-        $this->client->request('GET', $this->getGetUrlForProduct($this->product1));
+        $this->client->request('GET', static::getGetUrlForProduct($this->product1->getId()));
         $response = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
@@ -887,8 +886,9 @@ class ProductControllerTest extends SuluTestCase
                     'id' => $this->productStatusActive->getId(),
                 ],
                 'type' => [
-                    'id' => 666, ],
-                ]
+                    'id' => 666,
+                ],
+            ]
         );
 
         $response = json_decode($this->client->getResponse()->getContent());
@@ -946,7 +946,7 @@ class ProductControllerTest extends SuluTestCase
 
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
 
-        $this->client->request('GET', $this->getGetUrlForProduct($this->product1));
+        $this->client->request('GET', static::getGetUrlForProduct($this->product1->getId()));
 
         $response = json_decode($this->client->getResponse()->getContent());
 
@@ -1029,7 +1029,7 @@ class ProductControllerTest extends SuluTestCase
         $response = json_decode($this->client->getResponse()->getContent());
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
 
-        $this->client->request('GET', '/api/products/' . $response->id . '?locale=en');
+        $this->client->request('GET', static::getGetUrlForProduct($response->id));
         $response = json_decode($this->client->getResponse()->getContent());
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
 
@@ -1193,7 +1193,7 @@ class ProductControllerTest extends SuluTestCase
         $this->client->request('DELETE', '/api/products/' . $this->product1->getId());
         $this->assertEquals('204', $this->client->getResponse()->getStatusCode());
 
-        $this->client->request('GET', $this->getGetUrlForProduct($this->product1));
+        $this->client->request('GET', static::getGetUrlForProduct($this->product1->getId()));
         $this->assertEquals('404', $this->client->getResponse()->getStatusCode());
     }
 
@@ -1228,7 +1228,10 @@ class ProductControllerTest extends SuluTestCase
      */
     public function testAllTypeFilter()
     {
-        $this->client->request('GET', '/api/products?flat=true&type=' . $this->type1->getId() . ',' . $this->type2->getId());
+        $this->client->request(
+            'GET',
+            '/api/products?flat=true&type=' . $this->type1->getId() . ',' . $this->type2->getId()
+        );
 
         $response = json_decode($this->client->getResponse()->getContent());
 
@@ -1307,7 +1310,7 @@ class ProductControllerTest extends SuluTestCase
         $productId = $this->product1->getId();
 
         // Get product data.
-        $this->client->request('GET', '/api/products/' . $productId . '?locale=en');
+        $this->client->request('GET', static::getGetUrlForProduct($productId));
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
 
         // Manipulate search Terms.

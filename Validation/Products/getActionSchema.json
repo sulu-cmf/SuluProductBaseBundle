@@ -1,11 +1,10 @@
 {
-    "title": "Put setting schema",
+    "title": "Get product by id schema",
     "type": "object",
     "properties": {
         "locale": {
             "type": "string",
-            "minLength": 2,
-            "maxLength": 2
+            "minLength": 2
         }
     },
     "required": [

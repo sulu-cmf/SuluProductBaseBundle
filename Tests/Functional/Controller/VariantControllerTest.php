@@ -13,10 +13,14 @@ namespace Sulu\Bundle\ProductBundle\Tests\Functional\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Sulu\Bundle\ProductBundle\Api\ApiProductInterface;
+use Sulu\Bundle\ProductBundle\Entity\Attribute;
+use Sulu\Bundle\ProductBundle\Entity\Currency;
+use Sulu\Bundle\ProductBundle\Entity\CurrencyRepository;
 use Sulu\Bundle\ProductBundle\Entity\Status;
 use Sulu\Bundle\ProductBundle\Entity\StatusTranslation;
 use Sulu\Bundle\ProductBundle\Entity\Type;
 use Sulu\Bundle\ProductBundle\Product\ProductFactoryInterface;
+use Sulu\Bundle\ProductBundle\Tests\Resources\ProductTestData;
 use Sulu\Bundle\TestBundle\Testing\SuluTestCase;
 use Symfony\Bundle\FrameworkBundle\Client;
 
@@ -58,6 +62,11 @@ class VariantControllerTest extends SuluTestCase
     private $product;
 
     /**
+     * @var Currency
+     */
+    private $currencyEUR;
+
+    /**
      * @var Type
      */
     protected $productWithVariantsType;
@@ -68,14 +77,38 @@ class VariantControllerTest extends SuluTestCase
     private $productVariants = [];
 
     /**
+     * @var ProductTestData
+     */
+    private $productTestData;
+
+    /**
+     * @var Attribute
+     */
+    private $attribute1;
+
+    /**
+     * @var Attribute
+     */
+    private $attribute2;
+
+    /**
      * {@inheritdoc}
      */
     public function setUp()
     {
         $this->em = $this->getEntityManager();
         $this->purgeDatabase();
+        $this->loadDataFixtures();
         $this->createFixtures();
         $this->client = $this->createAuthenticatedClient();
+    }
+
+    /**
+     * Loads all necessary data fixtures.
+     */
+    public function loadDataFixtures()
+    {
+        $this->currencyEUR = $this->getCurrencyRepository()->findByCode('EUR');
     }
 
     /**
@@ -83,6 +116,10 @@ class VariantControllerTest extends SuluTestCase
      */
     public function createFixtures()
     {
+        $this->productTestData = new ProductTestData($this->getContainer(), false);
+        $this->attribute1 = $this->productTestData->createAttribute();
+        $this->attribute2 = $this->productTestData->createAttribute();
+
         $this->productType = new Type();
         $this->productType->setTranslationKey('Type1');
         $this->em->persist($this->productType);
@@ -100,15 +137,25 @@ class VariantControllerTest extends SuluTestCase
         $this->em->persist($this->activeStatus);
         $this->em->persist($activeStatusTranslation);
 
-        $this->product = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
+        $this->product = $this->getProductFactory()->createApiEntity(
+            $this->getProductFactory()->createEntity(),
+            self::REQUEST_LOCALE
+        );
+        $productEntity = $this->product->getEntity();
         $this->product->setName('Product with Variants');
         $this->product->setNumber('1');
         $this->product->setStatus($this->activeStatus);
         $this->product->setType($this->productWithVariantsType);
 
+        $productEntity->addVariantAttribute($this->attribute1);
+        $productEntity->addVariantAttribute($this->attribute2);
+
         $this->em->persist($this->product->getEntity());
 
-        $productVariant1 = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
+        $productVariant1 = $this->getProductFactory()->createApiEntity(
+            $this->getProductFactory()->createEntity(),
+            self::REQUEST_LOCALE
+        );
         $productVariant1->setName('Productvariant');
         $productVariant1->setNumber('2');
         $productVariant1->setStatus($this->activeStatus);
@@ -117,7 +164,10 @@ class VariantControllerTest extends SuluTestCase
         $this->em->persist($productVariant1->getEntity());
         $this->productVariants[] = $productVariant1;
 
-        $productVariant2 = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
+        $productVariant2 = $this->getProductFactory()->createApiEntity(
+            $this->getProductFactory()->createEntity(),
+            self::REQUEST_LOCALE
+        );
         $productVariant2->setName('Another Productvariant');
         $productVariant2->setNumber('3');
         $productVariant2->setStatus($this->activeStatus);
@@ -126,7 +176,10 @@ class VariantControllerTest extends SuluTestCase
         $this->em->persist($productVariant2->getEntity());
         $this->productVariants[] = $productVariant2;
 
-        $anotherProduct = $this->getProductFactory()->createApiEntity($this->getProductFactory()->createEntity(), self::REQUEST_LOCALE);
+        $anotherProduct = $this->getProductFactory()->createApiEntity(
+            $this->getProductFactory()->createEntity(),
+            self::REQUEST_LOCALE
+        );
         $anotherProduct->setName('Another product');
         $anotherProduct->setNumber('4');
         $anotherProduct->setStatus($this->activeStatus);
@@ -160,8 +213,25 @@ class VariantControllerTest extends SuluTestCase
     {
         $this->client->request(
             'POST',
-            '/api/products/' . $this->product->getId() . '/variants',
-            ['id' => $this->productVariants[0]->getId()]
+            '/api/products/' . $this->product->getId() . '/variants?locale=' . self::REQUEST_LOCALE,
+            [
+                'name' => 'ProductVariant 1',
+                'number' => '1234',
+                'prices' => [
+                    [
+                        'price' => 17.99,
+                        'currency' => [
+                            'id' => $this->currencyEUR->getId(),
+                        ],
+                    ],
+                ],
+                'attributes' => [
+                    [
+                        'attributeId' => $this->attribute1->getId(),
+                        'attributeValueName' => 'Attribute-1-Value-Text',
+                    ],
+                ],
+            ]
         );
 
         $response = json_decode($this->client->getResponse()->getContent());
@@ -237,4 +307,13 @@ class VariantControllerTest extends SuluTestCase
     {
         return $this->getContainer()->get('sulu_product.product_factory');
     }
+
+    /**
+     * @return CurrencyRepository
+     */
+    private function getCurrencyRepository()
+    {
+        return $this->getContainer()->get('sulu_product.currency_repository');
+    }
+
 }

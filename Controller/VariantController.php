@@ -89,6 +89,16 @@ class VariantController extends RestController implements ClassResourceInterface
 
             $listBuilder->where($fieldDescriptors['parent'], $parentId);
 
+            // Only add group by id if categories are processed.
+            $fieldsParam = $request->get('fields');
+            $fields = explode(',', $fieldsParam);
+            if (isset($filter['categories']) ||
+                !$fieldsParam ||
+                array_search('categories', $fields) !== false
+            ) {
+                $listBuilder->addGroupBy($fieldDescriptors['id']);
+            }
+
             $list = new ListRepresentation(
                 $listBuilder->execute(),
                 self::$entityKey,

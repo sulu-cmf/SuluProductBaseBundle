@@ -32,15 +32,51 @@ class ProductPriceManager implements ProductPriceManagerInterface
     protected $priceFormatter;
 
     /**
+     * @var CurrencyManager
+     */
+    private $currencyManager;
+
+    /**
      * @param string $defaultCurrency
      * @param PriceFormatter $priceFormatter
+     * @param CurrencyManager $currencyManager
      */
     public function __construct(
         $defaultCurrency,
-        PriceFormatter $priceFormatter
+        PriceFormatter $priceFormatter,
+        CurrencyManager $currencyManager
     ) {
         $this->defaultCurrency = $defaultCurrency;
         $this->priceFormatter = $priceFormatter;
+        $this->currencyManager = $currencyManager;
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param float $priceValue
+     * @param float $minimumQuantity
+     * @param string|null $currencyCode
+     *
+     * @return ProductPrice
+     */
+    public function createNewProductPriceForCurrency(
+        ProductInterface $product,
+        $priceValue,
+        $minimumQuantity = 0.0,
+        $currencyCode = null
+    ) {
+        // Fallback currency.
+        if (!$currencyCode) {
+            $currencyCode = $this->defaultCurrency;
+        }
+
+        $productPrice = new ProductPrice();
+        $productPrice->setMinimumQuantity($minimumQuantity);
+        $productPrice->setPrice($priceValue);
+        $productPrice->setProduct($product);
+        $productPrice->setCurrency($this->currencyManager->findByCode($currencyCode));
+
+        return $productPrice;
     }
 
     /**
@@ -166,7 +202,7 @@ class ProductPriceManager implements ProductPriceManagerInterface
         }
 
         return $this->priceFormatter->format(
-            (float) $price,
+            (float)$price,
             null,
             $locale,
             $symbol,

@@ -210,13 +210,14 @@ class VariantControllerTest extends SuluTestCase
             'POST',
             '/api/products/' . $this->product->getId() . '/variants?locale=' . self::REQUEST_LOCALE,
             [
-                'name' => 'ProductVariant 1',
+                'name' => 'The new kid in town',
                 'number' => '1234',
                 'prices' => [
                     [
                         'price' => 17.99,
                         'currency' => [
                             'id' => $this->currencyEUR->getId(),
+                            'code' => 'EUR',
                         ],
                     ],
                 ],
@@ -233,10 +234,11 @@ class VariantControllerTest extends SuluTestCase
             ]
         );
 
-        $response = json_decode($this->client->getResponse()->getContent());
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
-        $this->assertEquals('2', $response->number);
-        $this->assertEquals('1', $response->parent->number);
+        $this->assertEquals('The new kid in town', $response['name']);
+        $this->assertEquals('1234', $response['number']);
+        $this->asserCount(2, $response['productAttributs']);
 
         $this->client->request('GET', ProductControllerTest::getGetUrlForProduct($this->productVariants[0]->getId()));
 

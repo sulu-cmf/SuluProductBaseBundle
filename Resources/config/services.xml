@@ -163,6 +163,7 @@
             <argument type="service" id="sulu_product.product_factory"/>
             <argument type="service" id="sulu_product.product_attribute_manager"/>
             <argument type="service" id="sulu_product.type_repository"/>
+            <argument type="service" id="sulu_product.price_manager"/>
             <argument>%sulu_product.product_type_map%</argument>
         </service>
         <service id="sulu_product.attribute_manager" class="%sulu_product.attribute_manager.class%">

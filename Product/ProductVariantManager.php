@@ -13,8 +13,10 @@ namespace Sulu\Bundle\ProductBundle\Product;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
+use Sulu\Bundle\ProductBundle\Entity\ProductPrice;
 use Sulu\Bundle\ProductBundle\Entity\Type;
 use Sulu\Bundle\ProductBundle\Entity\TypeRepository;
+use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 use Sulu\Bundle\ProductBundle\Traits\UtilitiesTrait;
 
@@ -58,12 +60,18 @@ class ProductVariantManager implements ProductVariantManagerInterface
     private $productTypesMap;
 
     /**
+     * @var ProductPriceManager
+     */
+    private $productPriceManager;
+
+    /**
      * @param EntityManagerInterface $entityManager
      * @param ProductManagerInterface $productManager
      * @param ProductRepositoryInterface $productRepository
      * @param ProductFactoryInterface $productFactory
      * @param ProductAttributeManager $productAttributeManager
      * @param TypeRepository $typeRepository
+     * @param ProductPriceManager $productPriceManager
      * @param array $productTypesMap
      */
     public function __construct(
@@ -73,6 +81,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
         ProductFactoryInterface $productFactory,
         ProductAttributeManager $productAttributeManager,
         TypeRepository $typeRepository,
+        ProductPriceManager $productPriceManager,
         array $productTypesMap
     ) {
         $this->entityManager = $entityManager;
@@ -82,6 +91,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $this->productAttributeManager = $productAttributeManager;
         $this->productTypeRepository = $typeRepository;
         $this->productTypesMap = $productTypesMap;
+        $this->productPriceManager = $productPriceManager;
     }
 
     /**
@@ -118,9 +128,12 @@ class ProductVariantManager implements ProductVariantManagerInterface
     {
         $variant = $this->productRepository->findById($variantId);
 
-        // TODO: Check type of variant.
         if (!$variant) {
             throw new ProductNotFoundException($variantId);
+        }
+
+        if ($variant->getType()->getId() !== $this->productTypesMap['PRODUCT_VARIANT']) {
+            throw new ProductException('Product is no variant and therefore cannot be deleted');
         }
 
         $variant->setParent(null);
@@ -135,8 +148,6 @@ class ProductVariantManager implements ProductVariantManagerInterface
     }
 
     /**
-     * TODO: MOVE TO MAPPER
-     *
      * @param ProductInterface $variant
      * @param array $variantData
      * @param string $locale
@@ -146,9 +157,10 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $productTranslation = $this->productManager->retrieveOrCreateProductTranslationByLocale($variant, $locale);
         $productTranslation->setName($this->getProperty($variantData, 'name'));
 
-        $variant->setNumber($this->getProperty($variantData, 'name'));
+        $variant->setNumber($this->getProperty($variantData, 'number'));
 
         $this->processAttributes($variant, $variantData, $locale);
+        $this->processPrices($variant, $variantData);
         // TODO: process prices
     }
 
@@ -172,7 +184,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
             || !$sizeOfParentAttributes
             || $sizeOfVariantAttributes != $sizeOfParentAttributes
         ) {
-            throw new \Exception('TODO: CREATE A CUSTOM EXCEPTION');
+            throw new ProductException('Invalid number of attributes for variant provided!');
         }
 
         $attributesDataCopy = $variantData['attributes'];
@@ -201,7 +213,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
 
         // Not all necessary variant attributes were defined in data array!
         if (sizeof($attributesDataCopy)) {
-            throw new \Exception('TODO: CREATE A CUSTOM EXCEPTION');
+            throw new ProductException('Invalid attributes for variant provided!');
         }
     }
 
@@ -212,5 +224,40 @@ class ProductVariantManager implements ProductVariantManagerInterface
      */
     private function getTypeVariant() {
         return $this->entityManager->getReference(Type::class, $this->productTypesMap['PRODUCT_VARIANT']);
+    }
+
+    /**
+     * Adds or updates price information for variant.
+     *
+     * @param ProductInterface $variant
+     * @param array $variantData
+     */
+    private function processPrices(ProductInterface $variant, array $variantData)
+    {
+        if (!sizeof($variantData['prices'])) {
+            return;
+        }
+
+        $currentPrices = iterator_to_array($variant->getPrices());
+        foreach ($variantData['prices'] as $price) {
+            $matchingEntity = null;
+            /** @var ProductPrice $currentPrice */
+            foreach ($currentPrices as $index => $currentPrice) {
+                if ($price['currency'] === $currentPrice->getCurrency()->getCode()) {
+                    $currencyMatch = $currentPrice;
+                    unset($currentPrices[$index]);
+                }
+
+                // TODO: CURRENCY CODE OR ID??
+                if (!$currencyMatch) {
+                    $this->productPriceManager->createNewProductPriceForCurrency($price['price']);
+                }
+            }
+        }
+
+        // The following prices were not matched and therefore have to be deleted.
+        foreach ($currentPrices as $price) {
+            $this->entityManager->remove($price);
+        }
     }
 }

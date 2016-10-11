@@ -104,7 +104,7 @@ class ProductAttributeManager
         if (!$attributeValueTranslation) {
             // Create a new attribute value translation.
             $attributeValueTranslation = new AttributeValueTranslation();
-            $this->em->persist($attributeValueTranslation);
+            $this->entityManager->persist($attributeValueTranslation);
             $attributeValueTranslation->setLocale($locale);
             $attributeValueTranslation->setAttributeValue($attributeValue);
             $attributeValue->addTranslation($attributeValueTranslation);
@@ -118,7 +118,7 @@ class ProductAttributeManager
      * Removes attribute value translation in given locale from given attribute.
      *
      * @param AttributeValue $attributeValue
-     * @param $locale
+     * @param string $locale
      */
     public function removeAttributeValueTranslation(AttributeValue $attributeValue, $locale)
     {
@@ -127,7 +127,7 @@ class ProductAttributeManager
         foreach ($attributeValue->getTranslations() as $attributeValueTranslation) {
             if ($attributeValueTranslation->getLocale() === $locale) {
                 $attributeValue->removeTranslation($attributeValueTranslation);
-                $this->em->remove($attributeValueTranslation);
+                $this->entityManager->remove($attributeValueTranslation);
             }
         }
     }
@@ -143,7 +143,7 @@ class ProductAttributeManager
         /** @var AttributeValueTranslation $attributeValueTranslation */
         foreach ($attributeValue->getTranslations() as $attributeValueTranslation) {
             $attributeValue->removeTranslation($attributeValueTranslation);
-            $this->em->remove($attributeValueTranslation);
+            $this->entityManager->remove($attributeValueTranslation);
         }
     }
 }

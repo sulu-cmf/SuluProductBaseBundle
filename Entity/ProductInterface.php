@@ -12,6 +12,7 @@
 namespace Sulu\Bundle\ProductBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Sulu\Bundle\CategoryBundle\Entity\Category;
 use Sulu\Bundle\ContactBundle\Entity\AccountInterface;
 use Sulu\Bundle\ContactBundle\Entity\Country;
 use Sulu\Bundle\MediaBundle\Entity\Media;

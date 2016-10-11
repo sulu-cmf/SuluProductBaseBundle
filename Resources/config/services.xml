@@ -150,15 +150,20 @@
             <argument type="service" id="sulu_contact.account_repository"/>
             <argument type="service" id="sulu_tag.tag_repository"/>
             <argument>%sulu_product.default_currency%</argument>
+            <argument type="service" id="sulu_product.product_attribute_manager"/>
+            <argument>%sulu_product.product_type_map%</argument>
         </service>
         <service id="sulu_product.product_attribute_manager" class="%sulu_product.product_attribute_manager.class%">
             <argument type="service" id="doctrine.orm.entity_manager"/>
         </service>
         <service id="sulu_product.product_variant_manager" class="%sulu_product.product_variant_manager.class%">
+            <argument type="service" id="doctrine.orm.entity_manager"/>
             <argument type="service" id="sulu_product.product_manager"/>
             <argument type="service" id="sulu_product.product_repository"/>
             <argument type="service" id="sulu_product.product_factory"/>
             <argument type="service" id="sulu_product.product_attribute_manager"/>
+            <argument type="service" id="sulu_product.type_repository"/>
+            <argument>%sulu_product.product_type_map%</argument>
         </service>
         <service id="sulu_product.attribute_manager" class="%sulu_product.attribute_manager.class%">
             <argument type="service" id="sulu_product.attribute_repository"/>

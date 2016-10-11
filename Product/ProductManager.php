@@ -187,6 +187,11 @@ class ProductManager implements ProductManagerInterface
     private $productAttributeManager;
 
     /**
+     * @var array
+     */
+    private $productTypesMap;
+
+    /**
      * @param ProductRepositoryInterface $productRepository
      * @param SpecialPriceRepository $specialPriceRepository
      * @param AttributeSetRepository $attributeSetRepository
@@ -207,6 +212,7 @@ class ProductManager implements ProductManagerInterface
      * @param TagRepositoryInterface $tagRepository
      * @param string $defaultCurrency
      * @param ProductAttributeManager $productAttributeManager
+     * @param array $productTypesMap
      */
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -228,7 +234,8 @@ class ProductManager implements ProductManagerInterface
         AccountRepository $accountRepository,
         TagRepositoryInterface $tagRepository,
         $defaultCurrency,
-        ProductAttributeManager $productAttributeManager
+        ProductAttributeManager $productAttributeManager,
+        array $productTypesMap
     ) {
         $this->productRepository = $productRepository;
         $this->specialPriceRepository = $specialPriceRepository;
@@ -250,6 +257,7 @@ class ProductManager implements ProductManagerInterface
         $this->tagRepository = $tagRepository;
         $this->defaultCurrency = $defaultCurrency;
         $this->productAttributeManager = $productAttributeManager;
+        $this->productTypesMap = $productTypesMap;
     }
 
     /**
@@ -1723,7 +1731,17 @@ class ProductManager implements ProductManagerInterface
         if (!$status) {
             throw new ProductDependencyNotFoundException(self::$productStatusEntityName, $statusId);
         }
+
+        // Set new status to product.
         $product->setStatus($status);
+
+        // If product has variants, set status for all variants as well.
+        if ($product->getType()->getId() === $this->productTypesMap['PRODUCT_WITH_VARIANTS']) {
+            $variants = $this->productRepository->findByParent($product);
+            foreach($variants as $variant) {
+                $variant->setStatus($status);
+            }
+        }
     }
 
     /**

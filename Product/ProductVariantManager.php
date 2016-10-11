@@ -11,7 +11,10 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
+use Sulu\Bundle\ProductBundle\Entity\Type;
+use Sulu\Bundle\ProductBundle\Entity\TypeRepository;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 use Sulu\Bundle\ProductBundle\Traits\UtilitiesTrait;
 
@@ -40,21 +43,45 @@ class ProductVariantManager implements ProductVariantManagerInterface
     private $productAttributeManager;
 
     /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    /**
+     * @var TypeRepository
+     */
+    private $productTypeRepository;
+
+    /**
+     * @var array
+     */
+    private $productTypesMap;
+
+    /**
+     * @param EntityManagerInterface $entityManager
      * @param ProductManagerInterface $productManager
      * @param ProductRepositoryInterface $productRepository
      * @param ProductFactoryInterface $productFactory
      * @param ProductAttributeManager $productAttributeManager
+     * @param TypeRepository $typeRepository
+     * @param array $productTypesMap
      */
     public function __construct(
+        EntityManagerInterface $entityManager,
         ProductManagerInterface $productManager,
         ProductRepositoryInterface $productRepository,
         ProductFactoryInterface $productFactory,
-        ProductAttributeManager $productAttributeManager
+        ProductAttributeManager $productAttributeManager,
+        TypeRepository $typeRepository,
+        array $productTypesMap
     ) {
+        $this->entityManager = $entityManager;
         $this->productManager = $productManager;
         $this->productRepository = $productRepository;
         $this->productFactory = $productFactory;
         $this->productAttributeManager = $productAttributeManager;
+        $this->productTypeRepository = $typeRepository;
+        $this->productTypesMap = $productTypesMap;
     }
 
     /**
@@ -71,9 +98,12 @@ class ProductVariantManager implements ProductVariantManagerInterface
         // Create variant product by setting variant data.
         /** @var ProductInterface $variant */
         $variant = $this->productFactory->createEntity();
+        $this->entityManager->persist($variant);
 
         // Set parent.
         $variant->setParent($parent);
+        $variant->setType($this->getTypeVariant());
+        $variant->setStatus($parent->getStatus());
 
         // Set data to variant.
         $this->mapDataToVariant($variant, $variantData, $locale);
@@ -118,7 +148,6 @@ class ProductVariantManager implements ProductVariantManagerInterface
 
         $variant->setNumber($this->getProperty($variantData, 'name'));
 
-        // TODO: process attributes
         $this->processAttributes($variant, $variantData, $locale);
         // TODO: process prices
     }
@@ -146,21 +175,42 @@ class ProductVariantManager implements ProductVariantManagerInterface
             throw new \Exception('TODO: CREATE A CUSTOM EXCEPTION');
         }
 
-        $matchCount = 0;
+        $attributesDataCopy = $variantData['attributes'];
+
+        //TODO: Define schema with attributeId and AttributeValueName
         foreach ($parent->getVariantAttributes() as $variantAttribute) {
-            foreach ($variantData['attributes'] as $attributes) {
-                //TODO: Define schema with attributeId and AttributeValueName
-                if ($variantAttribute->getId() === $attributes['attributeId']) {
-                    $attributeValue = $this->productAttributeManager->createAttributeValue();
-                    $this->productAttributeManager->createProductAttribute($variantAttribute, $variant );
-                    $matchCount++;
+            foreach ($attributesDataCopy as $index => $attributeData) {
+                if ($variantAttribute->getId() === $attributeData['attributeId']) {
+                    // TODO: This only works for create context; ALSO HANDLE UPDATE!
+                    $attributeValue = $this->productAttributeManager->createAttributeValue(
+                        $variantAttribute,
+                        $attributeData['attributeValueName'],
+                        $locale
+                    );
+                    $this->productAttributeManager->createProductAttribute(
+                        $variantAttribute,
+                        $variant,
+                        $attributeValue
+                    );
+
+                    // Remove from data to speed up things.
+                    unset($attributesDataCopy[$index]);
                 }
             }
         }
 
         // Not all necessary variant attributes were defined in data array!
-        if ($matchCount !== $sizeOfParentAttributes) {
+        if (sizeof($attributesDataCopy)) {
             throw new \Exception('TODO: CREATE A CUSTOM EXCEPTION');
         }
+    }
+
+    /**
+     * Returns the product type of a variant.
+     *
+     * @return Type
+     */
+    private function getTypeVariant() {
+        return $this->entityManager->getReference(Type::class, $this->productTypesMap['PRODUCT_VARIANT']);
     }
 }

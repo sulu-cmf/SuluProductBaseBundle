@@ -225,6 +225,10 @@ class VariantControllerTest extends SuluTestCase
                         'attributeId' => $this->attribute1->getId(),
                         'attributeValueName' => 'Attribute-1-Value-Text',
                     ],
+                    [
+                        'attributeId' => $this->attribute2->getId(),
+                        'attributeValueName' => 'Attribute-2-Value-Text',
+                    ],
                 ],
             ]
         );

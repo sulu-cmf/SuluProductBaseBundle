@@ -12,8 +12,10 @@
 namespace Sulu\Bundle\ProductBundle\DependencyInjection;
 
 use Sulu\Bundle\PersistenceBundle\DependencyInjection\PersistenceExtensionTrait;
+use Sulu\Bundle\ProductBundle\DataFixtures\ORM\ProductTypes\LoadProductTypes;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
@@ -40,6 +42,8 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
         $container->setParameter('sulu_product.locales', $config['locales']);
         $container->setParameter('sulu_product.template', $config['template']);
 
+        $container->setParameter('sulu_product.product_type_map', $this->retrieveProductTypeMap($container));
+
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
 
@@ -61,5 +65,22 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
                 ]
             );
         }
+    }
+
+    /**
+     * Returns key to id mapping for product-types.
+     * Processes product-types fixtures xml.
+     *
+     * @return array
+     */
+    private function retrieveProductTypeMap()
+    {
+        $productTypeMap = [];
+
+        LoadProductTypes::processProductTypesFixtures(function(\DOMElement $element) use (&$productTypeMap) {
+            $productTypeMap[$element->getAttribute('key')] = $element->getAttribute('id');
+        });
+
+        return $productTypeMap;
     }
 }

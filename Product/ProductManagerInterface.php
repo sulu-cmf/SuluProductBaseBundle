@@ -13,6 +13,7 @@ namespace Sulu\Bundle\ProductBundle\Product;
 
 use Sulu\Bundle\ProductBundle\Api\Product;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
+use Sulu\Bundle\ProductBundle\Entity\ProductTranslation;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
 
 interface ProductManagerInterface
@@ -98,4 +99,15 @@ interface ProductManagerInterface
      * @return ProductInterface[]
      */
     public function createApiEntitiesByIds($ids, $locale);
+
+    /**
+     * Function tries to find a translation for product by locale. If translation for given locale
+     * does not exist, a new one is created an added to the product.
+     *
+     * @param ProductInterface $product
+     * @param string $locale
+     *
+     * @return ProductTranslation
+     */
+    public function retrieveOrCreateProductTranslationByLocale(ProductInterface $product, $locale);
 }

@@ -98,17 +98,8 @@ class VariantControllerTest extends SuluTestCase
     {
         $this->em = $this->getEntityManager();
         $this->purgeDatabase();
-        $this->loadDataFixtures();
         $this->createFixtures();
         $this->client = $this->createAuthenticatedClient();
-    }
-
-    /**
-     * Loads all necessary data fixtures.
-     */
-    public function loadDataFixtures()
-    {
-        $this->currencyEUR = $this->getCurrencyRepository()->findByCode('EUR');
     }
 
     /**
@@ -119,6 +110,8 @@ class VariantControllerTest extends SuluTestCase
         $this->productTestData = new ProductTestData($this->getContainer(), false);
         $this->attribute1 = $this->productTestData->createAttribute();
         $this->attribute2 = $this->productTestData->createAttribute();
+
+        $this->currencyEUR = $this->getCurrencyRepository()->findByCode('EUR');
 
         $this->productType = new Type();
         $this->productType->setTranslationKey('Type1');
@@ -208,6 +201,8 @@ class VariantControllerTest extends SuluTestCase
 
     /**
      * Test post for creating a new product.
+     *
+     * TODO: ADD POST STRUCTURE TO DOCUMENTATION.
      */
     public function testPost()
     {

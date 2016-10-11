@@ -11,6 +11,7 @@
 
 namespace Sulu\Bundle\ProductBundle\Controller;
 
+use Doctrine\ORM\EntityManager;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use Hateoas\Representation\CollectionRepresentation;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
@@ -141,6 +142,8 @@ class VariantController extends RestController implements ClassResourceInterface
                 $userId
             );
 
+            $this->getEntityManager()->flush();
+
             $view = $this->view($variant, 200);
         } catch (ProductNotFoundException $exc) {
             $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
@@ -162,6 +165,7 @@ class VariantController extends RestController implements ClassResourceInterface
     {
         try {
             $this->getProductVariantManager()->deleteVariant($parentId, $variantId);
+            $this->getEntityManager()->flush();
 
             $view = $this->view(null, 204);
         } catch (ProductNotFoundException $exc) {
@@ -178,6 +182,14 @@ class VariantController extends RestController implements ClassResourceInterface
     private function getProductManager()
     {
         return $this->get('sulu_product.product_manager');
+    }
+
+    /**
+     * @return EntityManager
+     */
+    private function getEntityManager()
+    {
+        return $this->get('doctrine.orm.entity_manager');
     }
 
     /**

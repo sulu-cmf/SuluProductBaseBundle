@@ -12,6 +12,7 @@
 namespace Sulu\Bundle\ProductBundle\Product;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Sulu\Bundle\ProductBundle\Entity\Attribute;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductPrice;
 use Sulu\Bundle\ProductBundle\Entity\Type;
@@ -118,6 +119,30 @@ class ProductVariantManager implements ProductVariantManagerInterface
         // Set data to variant.
         $this->mapDataToVariant($variant, $variantData, $locale);
 
+        // TODO: set creator and changer for creation and update.
+
+        return $variant;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function updateVariant($variantId, array $variantData, $locale, $userId)
+    {
+        // Check if parent product exists.
+        $variant = $this->productRepository->findById($variantId);
+        if (!$variant) {
+            throw new ProductNotFoundException($variantId);
+        }
+
+        // Check if product is variant.
+        if ($variant->getType()->getId() !== (int)$this->productTypesMap['PRODUCT_VARIANT']) {
+            throw new ProductException('Product is no variant and therefore cannot be updated');
+        }
+
+        // Set data to variant.
+        $this->mapDataToVariant($variant, $variantData, $locale);
+
         return $variant;
     }
 
@@ -131,20 +156,11 @@ class ProductVariantManager implements ProductVariantManagerInterface
         if (!$variant) {
             throw new ProductNotFoundException($variantId);
         }
-
-        if ($variant->getType()->getId() !== $this->productTypesMap['PRODUCT_VARIANT']) {
+        if ($variant->getType()->getId() !== (int)$this->productTypesMap['PRODUCT_VARIANT']) {
             throw new ProductException('Product is no variant and therefore cannot be deleted');
         }
 
-        $variant->setParent(null);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function updateVariant($variantId, array $variantData, $locale, $userId)
-    {
-        // TODO: Implement updateVariant() method.
+        // Check if
     }
 
     /**
@@ -189,21 +205,17 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $attributesDataCopy = $variantData['attributes'];
 
         //TODO: Define schema with attributeId and AttributeValueName
+        // For all variants of parent, find corresponding attribute in variant-data.
         foreach ($parent->getVariantAttributes() as $variantAttribute) {
             foreach ($attributesDataCopy as $index => $attributeData) {
                 if ($variantAttribute->getId() === $attributeData['attributeId']) {
-                    // TODO: This only works for create context; ALSO HANDLE UPDATE!
-                    $attributeValue = $this->productAttributeManager->createAttributeValue(
+                    // Update or create ProductAttribte for variant.
+                    $this->productAttributeManager->updateOrCreateProductAttributeForProduct(
+                        $variant,
                         $variantAttribute,
-                        $attributeData['attributeValueName'],
+                        $attributeData,
                         $locale
                     );
-                    $this->productAttributeManager->createProductAttribute(
-                        $variantAttribute,
-                        $variant,
-                        $attributeValue
-                    );
-
                     // Remove from data to speed up things.
                     unset($attributesDataCopy[$index]);
                 }
@@ -262,6 +274,11 @@ class ProductVariantManager implements ProductVariantManagerInterface
         }
     }
 
+//    private function getUserReference($userId)
+//    {
+//        return $this->entityManager->getReference($this->userR)
+//    }
+
     /**
      * Returns the product type of a variant.
      *
@@ -271,4 +288,5 @@ class ProductVariantManager implements ProductVariantManagerInterface
     {
         return $this->entityManager->getReference(Type::class, $this->productTypesMap['PRODUCT_VARIANT']);
     }
+
 }

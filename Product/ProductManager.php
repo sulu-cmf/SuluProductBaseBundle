@@ -1179,8 +1179,8 @@ class ProductManager implements ProductManagerInterface
 
                     $product->addSpecialPrice($specialPrice);
                     $this->em->persist($specialPrice);
-                    // Else update the already existing special price.
                 } else {
+                    // Else update the already existing special price.
                     $specialPrice = $specialPrices[$specialPriceData['currency']['code']]->getEntity();
                 }
 

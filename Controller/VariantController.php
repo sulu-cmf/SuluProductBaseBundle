@@ -158,6 +158,42 @@ class VariantController extends RestController implements ClassResourceInterface
     }
 
     /**
+     * Updates an existing variant to given product.
+     *
+     * @param Request $request
+     * @param int $parentId
+     * @param int $variantId
+     *
+     * @return Response
+     */
+    public function putAction(Request $request, $parentId, $variantId)
+    {
+        $requestData = $request->request->all();
+        $userId = $this->getUser()->getId();
+        $locale = $this->getLocale($request);
+
+        try {
+            $variant = $this->getProductVariantManager()->updateVariant(
+                $variantId,
+                $requestData,
+                $locale,
+                $userId
+            );
+
+            $this->getEntityManager()->flush();
+
+            $apiVariant = $this->getProductFactory()->createApiEntity($variant, $locale);
+
+            $view = $this->view($apiVariant, 200);
+        } catch (ProductNotFoundException $exc) {
+            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
+            $view = $this->view($exception->toArray(), 400);
+        }
+
+        return $this->handleView($view);
+    }
+
+    /**
      * Removes a variant of product.
      *
      * @param int $parentId

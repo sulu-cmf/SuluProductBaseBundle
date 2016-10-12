@@ -267,40 +267,9 @@ class VariantControllerTest extends SuluTestCase
         $this->assertEquals('1234', $response['number']);
         $this->assertEquals($this->product->getId(), $response['parent']['id']);
 
-        // Check attributes.
-        $this->assertCount(sizeof($attributes), $response['attributes']);
+        $this->checkAttributes($attributes, $response);
 
-        // Response order independent comparison of attributes:
-        // For all given attributes compare with response data.
-        foreach($response['attributes'] as $responseAttribute) {
-            $match = null;
-            foreach($attributes as $index => $attribute) {
-                if ($attribute['attributeId'] === $responseAttribute['attributeId']) {
-                    $match = $attribute;
-                    unset($attributes[$index]);
-                    break;
-                }
-            }
-            $this->assertNotNull($match);
-            $this->assertEquals($match['attributeValueName'], $responseAttribute['attributeValueName']);
-        }
-
-        // Check prices.
-        $prices = $this->testPriceData;
-        $this->assertCount(sizeof($prices), $response['prices']);
-
-        foreach ($response['prices'] as $responsePrice) {
-            $match = null;
-            foreach($prices as $index => $price) {
-                if ($price['currency']['id'] === $responsePrice['currency']['id']) {
-                    $match = $price;
-                    unset($prices[$index]);
-                    break;
-                }
-            }
-            $this->assertNotNull($match);
-            $this->assertEquals($match['price'], $responsePrice['price']);
-        }
+        $this->checkPrices($prices, $response);
 
         // Check if entity really is in database.
         $this->client->request('GET', ProductControllerTest::getGetUrlForProduct($response['id']));
@@ -309,7 +278,7 @@ class VariantControllerTest extends SuluTestCase
     }
 
     /**
-     * Test put.
+     * Test PUT functionality of variants api.
      * First performs post to create data and then put to change it.
      */
     public function testPut()
@@ -320,6 +289,38 @@ class VariantControllerTest extends SuluTestCase
         // Perform post request.
         $responseObject = $this->performPostRequest($attributes, $prices);
         $this->assertEquals(200, $responseObject->getStatusCode());
+        $response = json_decode($responseObject->getContent(), true);
+
+        $attributes[0]['attributeValueName'] = 'Changed Attribute Value';
+        $prices[0]['price'] = 10.01;
+
+        $this->client->request(
+            'PUT',
+            sprintf(
+                '/api/products/%s/variants/%s?locale=%s',
+                $this->product->getId(),
+                $response['id'],
+                self::REQUEST_LOCALE
+            ),
+            [
+                'name' => 'Not so new kid anymore',
+                'number' => '4321',
+                'attributes' => $attributes,
+                'prices' => $prices,
+            ]
+        );
+
+        $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertEquals('Not so new kid anymore', $response['name']);
+        $this->assertEquals('4321', $response['number']);
+
+        $this->checkAttributes($attributes, $response);
+        $this->checkPrices($prices, $response);
+
+        return $this->client->getResponse();
     }
 
     /**
@@ -363,7 +364,10 @@ class VariantControllerTest extends SuluTestCase
     }
 
     /**
-     * Performs a post request and returns response as array.
+     * Performs a post request and returns response object.
+     *
+     * @param array $attributes
+     * @param array $prices
      *
      * @return Response
      */
@@ -397,6 +401,58 @@ class VariantControllerTest extends SuluTestCase
     private function getCurrencyRepository()
     {
         return $this->getContainer()->get('sulu_product.currency_repository');
+    }
+
+    /**
+     * Compares attributes data with response data.
+     *
+     * @param array $attributes
+     * @param array $response
+     */
+    private function checkAttributes($attributes, $response)
+    {
+        // Check attributes.
+        $this->assertCount(sizeof($attributes), $response['attributes']);
+
+        // Response order independent comparison of attributes:
+        // For all given attributes compare with response data.
+        foreach($response['attributes'] as $responseAttribute) {
+            $match = null;
+            foreach($attributes as $index => $attribute) {
+                if ($attribute['attributeId'] === $responseAttribute['attributeId']) {
+                    $match = $attribute;
+                    unset($attributes[$index]);
+                    break;
+                }
+            }
+            $this->assertNotNull($match);
+            $this->assertEquals($match['attributeValueName'], $responseAttribute['attributeValueName']);
+        }
+    }
+
+    /**
+     * Compares prices data with response data.
+     *
+     * @param array $prices
+     * @param array $response
+     */
+    private function checkPrices($prices, $response)
+    {
+        // Check prices.
+        $this->assertCount(sizeof($prices), $response['prices']);
+
+        foreach ($response['prices'] as $responsePrice) {
+            $match = null;
+            foreach($prices as $index => $price) {
+                if ($price['currency']['id'] === $responsePrice['currency']['id']) {
+                    $match = $price;
+                    unset($prices[$index]);
+                    break;
+                }
+            }
+            $this->assertNotNull($match);
+            $this->assertEquals($match['price'], $responsePrice['price']);
+        }
     }
 
 }

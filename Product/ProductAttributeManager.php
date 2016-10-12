@@ -123,12 +123,10 @@ class ProductAttributeManager
     public function removeAttributeValueTranslation(AttributeValue $attributeValue, $locale)
     {
         // Check if translation already exists for given locale.
-        /** @var AttributeValueTranslation $attributeValueTranslation */
-        foreach ($attributeValue->getTranslations() as $attributeValueTranslation) {
-            if ($attributeValueTranslation->getLocale() === $locale) {
-                $attributeValue->removeTranslation($attributeValueTranslation);
-                $this->entityManager->remove($attributeValueTranslation);
-            }
+        $attributeValueTranslation = $this->retrieveAttributeValueTranslationByLocale($attributeValue, $locale);
+        if ($attributeValueTranslation) {
+            $attributeValue->removeTranslation($attributeValueTranslation);
+            $this->entityManager->remove($attributeValueTranslation);
         }
     }
 
@@ -145,5 +143,84 @@ class ProductAttributeManager
             $attributeValue->removeTranslation($attributeValueTranslation);
             $this->entityManager->remove($attributeValueTranslation);
         }
+    }
+
+    /**
+     * Updates or creates a the product attribute relation for the given product.
+     *
+     * @param ProductInterface $product
+     * @param Attribute $attribute
+     * @param array $attributeData
+     * @param string $locale
+     */
+    public function updateOrCreateProductAttributeForProduct(
+        ProductInterface $product,
+        Attribute $attribute,
+        array $attributeData,
+        $locale
+    ) {
+        // Check if ProductAttribute already exists for attribute
+        $existingProductAttribute = $this->retrieveProductAttributeByAttribute(
+            $product,
+            $attribute
+        );
+
+        if ($existingProductAttribute) {
+            $this->setOrCreateAttributeValueTranslation(
+                $existingProductAttribute->getAttributeValue(),
+                $attributeData['attributeValueName'],
+                $locale
+            );
+        } else {
+            // Create new AttributeValue and ProductAttribute.
+            $attributeValue = $this->createAttributeValue(
+                $attribute,
+                $attributeData['attributeValueName'],
+                $locale
+            );
+            $this->createProductAttribute(
+                $attribute,
+                $product,
+                $attributeValue
+            );
+        }
+    }
+
+    /**
+     * Searches products product-attributes for given attribute.
+     *
+     * @param ProductInterface $product
+     * @param Attribute $attribute
+     *
+     * @return ProductAttribute|null
+     */
+    public function retrieveProductAttributeByAttribute(ProductInterface $product, Attribute $attribute)
+    {
+        foreach ($product->getProductAttributes() as $productAttribute) {
+            if ($productAttribute->getAttribute()->getId() === $attribute->getId()) {
+                return $productAttribute;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the translation in given locale for the given AttributeValue.
+     *
+     * @param AttributeValue $attributeValue
+     * @param string $locale
+     *
+     * @return AttributeValueTranslation|null
+     */
+    private function retrieveAttributeValueTranslationByLocale(AttributeValue $attributeValue, $locale)
+    {
+        foreach ($attributeValue->getTranslations() as $attributeValueTranslation) {
+            if ($attributeValueTranslation->getLocale() === $locale) {
+                return $attributeValueTranslation;
+            }
+        }
+
+        return null;
     }
 }

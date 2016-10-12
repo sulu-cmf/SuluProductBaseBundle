@@ -42,7 +42,7 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
         $container->setParameter('sulu_product.locales', $config['locales']);
         $container->setParameter('sulu_product.template', $config['template']);
 
-        $container->setParameter('sulu_product.product_type_map', $this->retrieveProductTypeMap($container));
+        $container->setParameter('sulu_product.product_types_map', $this->retrieveProductTypesMap($container));
 
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
@@ -73,7 +73,7 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
      *
      * @return array
      */
-    private function retrieveProductTypeMap()
+    private function retrieveProductTypesMap()
     {
         $productTypeMap = [];
 

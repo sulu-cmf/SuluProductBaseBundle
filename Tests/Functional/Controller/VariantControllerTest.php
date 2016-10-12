@@ -187,7 +187,7 @@ class VariantControllerTest extends SuluTestCase
         $this->product->setName('Product with Variants');
         $this->product->setNumber('1');
         $this->product->setStatus($this->activeStatus);
-        $this->product->setType($this->productWithVariantsType);
+        $this->product->setType($this->productType);
 
         $productEntity->addVariantAttribute($this->attribute1);
         $productEntity->addVariantAttribute($this->attribute2);
@@ -201,7 +201,7 @@ class VariantControllerTest extends SuluTestCase
         $productVariant1->setName('Productvariant');
         $productVariant1->setNumber('2');
         $productVariant1->setStatus($this->activeStatus);
-        $productVariant1->setType($this->productType);
+        $productVariant1->setType($this->getTypeVariantReference());
         $productVariant1->setParent($this->product);
         $this->em->persist($productVariant1->getEntity());
         $this->productVariants[] = $productVariant1;
@@ -213,7 +213,7 @@ class VariantControllerTest extends SuluTestCase
         $productVariant2->setName('Another Productvariant');
         $productVariant2->setNumber('3');
         $productVariant2->setStatus($this->activeStatus);
-        $productVariant2->setType($this->productType);
+        $productVariant2->setType($this->getTypeVariantReference());
         $productVariant2->setParent($this->product);
         $this->em->persist($productVariant2->getEntity());
         $this->productVariants[] = $productVariant2;
@@ -455,4 +455,27 @@ class VariantControllerTest extends SuluTestCase
         }
     }
 
+    /**
+     * Returns the product type of a variant.
+     *
+     * @return Type
+     */
+    private function getTypeVariantReference()
+    {
+        return $this->getEntityManager()->getReference(Type::class, $this->retrieveTypeIdByKey('PRODUCT_VARIANT'));
+    }
+
+    /**
+     * Maps product type string to its corresponding id.
+     *
+     * @param string $key
+     *
+     * @return int
+     */
+    private function retrieveTypeIdByKey($key)
+    {
+        $productTypesMap = $this->getContainer()->getParameter('sulu_product.product_types_map');
+
+        return $productTypesMap[$key];
+    }
 }

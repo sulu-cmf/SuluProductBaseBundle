@@ -11,7 +11,7 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
-use Sulu\Bundle\ProductBundle\Api\ApiProductInterface;
+use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 
 interface ProductVariantManagerInterface
 {
@@ -23,7 +23,7 @@ interface ProductVariantManagerInterface
      * @param string $locale The locale to load
      * @param int $userId
      *
-     * @return ApiProductInterface
+     * @return ProductInterface
      */
     public function createVariant($parentId, array $variantData, $locale, $userId);
 
@@ -35,7 +35,7 @@ interface ProductVariantManagerInterface
      * @param string $locale The locale to load
      * @param int $userId
      *
-     * @return ApiProductInterface
+     * @return ProductInterface
      */
     public function updateVariant($variantId, array $variantData, $locale, $userId);
 
@@ -43,6 +43,8 @@ interface ProductVariantManagerInterface
      * Deletes the given variant from database.
      *
      * @param int $variantId The id of the product, which is removed
+     *
+     * @return ProductInterface
      */
     public function deleteVariant($variantId);
 }

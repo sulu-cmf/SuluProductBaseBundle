@@ -12,7 +12,6 @@
 namespace Sulu\Bundle\ProductBundle\Product;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Sulu\Bundle\ProductBundle\Entity\Attribute;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductPrice;
 use Sulu\Bundle\ProductBundle\Entity\Type;
@@ -113,7 +112,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
 
         // Set parent.
         $variant->setParent($parent);
-        $variant->setType($this->getTypeVariant());
+        $variant->setType($this->getTypeVariantReference());
         $variant->setStatus($parent->getStatus());
 
         // Set data to variant.
@@ -160,7 +159,9 @@ class ProductVariantManager implements ProductVariantManagerInterface
             throw new ProductException('Product is no variant and therefore cannot be deleted');
         }
 
-        // Check if
+        $this->entityManager->remove($variant);
+
+        return $variant;
     }
 
     /**
@@ -284,9 +285,8 @@ class ProductVariantManager implements ProductVariantManagerInterface
      *
      * @return Type
      */
-    private function getTypeVariant()
+    private function getTypeVariantReference()
     {
         return $this->entityManager->getReference(Type::class, $this->productTypesMap['PRODUCT_VARIANT']);
     }
-
 }

@@ -11,13 +11,16 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
+use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\Annotation\Groups;
 use Sulu\Bundle\ProductBundle\Entity\Addon;
 use Sulu\Bundle\ProductBundle\Entity\AddonPrice;
+use Sulu\Bundle\ProductBundle\Entity\CurrencyRepository;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductPrice;
 use Sulu\Bundle\ProductBundle\Entity\SpecialPrice;
 use Sulu\Bundle\ProductBundle\Util\PriceFormatter;
+use Sulu\Component\Rest\Exception\EntityNotFoundException;
 
 class ProductPriceManager implements ProductPriceManagerInterface
 {
@@ -32,30 +35,40 @@ class ProductPriceManager implements ProductPriceManagerInterface
     protected $priceFormatter;
 
     /**
-     * @var CurrencyManager
+     * @var CurrencyRepository
      */
-    private $currencyManager;
+    private $currencyRepository;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
 
     /**
      * @param string $defaultCurrency
      * @param PriceFormatter $priceFormatter
-     * @param CurrencyManager $currencyManager
+     * @param EntityManagerInterface $entityManager
+     * @param CurrencyRepository $currencyRepository
      */
     public function __construct(
         $defaultCurrency,
         PriceFormatter $priceFormatter,
-        CurrencyManager $currencyManager
+        EntityManagerInterface $entityManager,
+        CurrencyRepository $currencyRepository
     ) {
         $this->defaultCurrency = $defaultCurrency;
         $this->priceFormatter = $priceFormatter;
-        $this->currencyManager = $currencyManager;
+        $this->currencyRepository = $currencyRepository;
+        $this->entityManager = $entityManager;
     }
 
     /**
      * @param ProductInterface $product
      * @param float $priceValue
      * @param float $minimumQuantity
-     * @param string|null $currencyCode
+     * @param null|int $currencyId
+     *
+     * @throws EntityNotFoundException
      *
      * @return ProductPrice
      */
@@ -63,18 +76,24 @@ class ProductPriceManager implements ProductPriceManagerInterface
         ProductInterface $product,
         $priceValue,
         $minimumQuantity = 0.0,
-        $currencyCode = null
+        $currencyId = null
     ) {
-        // Fallback currency.
-        if (!$currencyCode) {
-            $currencyCode = $this->defaultCurrency;
+        // Fetch currency.
+        if (!$currencyId) {
+            $currency = $this->currencyRepository->findByCode($this->defaultCurrency);
+        } else {
+            $currency = $this->currencyRepository->find($currencyId);
+        }
+        if (!$currency) {
+            throw new EntityNotFoundException($this->currencyRepository->getClassName(), $currencyId);
         }
 
         $productPrice = new ProductPrice();
         $productPrice->setMinimumQuantity($minimumQuantity);
         $productPrice->setPrice($priceValue);
         $productPrice->setProduct($product);
-        $productPrice->setCurrency($this->currencyManager->findByCode($currencyCode));
+        $productPrice->setCurrency($currency);
+        $product->addPrice($productPrice);
 
         return $productPrice;
     }

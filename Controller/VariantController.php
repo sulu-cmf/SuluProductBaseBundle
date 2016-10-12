@@ -15,6 +15,7 @@ use Doctrine\ORM\EntityManager;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use Hateoas\Representation\CollectionRepresentation;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
+use Sulu\Bundle\ProductBundle\Product\ProductFactoryInterface;
 use Sulu\Bundle\ProductBundle\Product\ProductManagerInterface;
 use Sulu\Bundle\ProductBundle\Product\ProductVariantManagerInterface;
 use Sulu\Component\Rest\Exception\EntityNotFoundException;
@@ -133,18 +134,21 @@ class VariantController extends RestController implements ClassResourceInterface
     {
         $requestData = $request->request->all();
         $userId = $this->getUser()->getId();
+        $locale = $this->getLocale($request);
 
         try {
             $variant = $this->getProductVariantManager()->createVariant(
                 $parentId,
                 $requestData,
-                $this->getLocale($request),
+                $locale,
                 $userId
             );
 
             $this->getEntityManager()->flush();
 
-            $view = $this->view($variant, 200);
+            $apiVariant = $this->getProductFactory()->createApiEntity($variant, $locale);
+
+            $view = $this->view($apiVariant, 200);
         } catch (ProductNotFoundException $exc) {
             $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
             $view = $this->view($exception->toArray(), 400);
@@ -174,6 +178,14 @@ class VariantController extends RestController implements ClassResourceInterface
         }
 
         return $this->handleView($view);
+    }
+
+    /**
+     * @return ProductFactoryInterface
+     */
+    private function getProductFactory()
+    {
+        return $this->get('sulu_product.product_factory');
     }
 
     /**

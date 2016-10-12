@@ -1736,7 +1736,7 @@ class ProductManager implements ProductManagerInterface
         $product->setStatus($status);
 
         // If product has variants, set status for all variants as well.
-        if ($product->getType()->getId() === $this->productTypesMap['PRODUCT_WITH_VARIANTS']) {
+        if ($product->getType() && $product->getType()->getId() === $this->productTypesMap['PRODUCT_WITH_VARIANTS']) {
             $variants = $this->productRepository->findByParent($product);
             foreach($variants as $variant) {
                 $variant->setStatus($status);

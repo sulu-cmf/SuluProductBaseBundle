@@ -23,6 +23,7 @@ use Sulu\Bundle\ProductBundle\Product\ProductFactoryInterface;
 use Sulu\Bundle\ProductBundle\Tests\Resources\ProductTestData;
 use Sulu\Bundle\TestBundle\Testing\SuluTestCase;
 use Symfony\Bundle\FrameworkBundle\Client;
+use Symfony\Component\HttpFoundation\Response;
 
 class VariantControllerTest extends SuluTestCase
 {
@@ -67,6 +68,11 @@ class VariantControllerTest extends SuluTestCase
     private $currencyEUR;
 
     /**
+     * @var Currency
+     */
+    private $currencyCHF;
+
+    /**
      * @var Type
      */
     protected $productWithVariantsType;
@@ -92,6 +98,16 @@ class VariantControllerTest extends SuluTestCase
     private $attribute2;
 
     /**
+     * @var array
+     */
+    private $testAttributeData;
+
+    /**
+     * @var array
+     */
+    private $testPriceData;
+
+    /**
      * {@inheritdoc}
      */
     public function setUp()
@@ -99,7 +115,39 @@ class VariantControllerTest extends SuluTestCase
         $this->em = $this->getEntityManager();
         $this->purgeDatabase();
         $this->createFixtures();
+        $this->createTestData();
         $this->client = $this->createAuthenticatedClient();
+    }
+
+    /**
+     * Setups test data, that is used for requests.
+     */
+    public function createTestData()
+    {
+        $this->testAttributeData = [
+            [
+                'attributeId' => $this->attribute1->getId(),
+                'attributeValueName' => 'Attribute-1-Value-Name',
+            ],
+            [
+                'attributeId' => $this->attribute2->getId(),
+                'attributeValueName' => 'Attribute-2-Value-Name',
+            ],
+        ];
+        $this->testPriceData = [
+            [
+                'price' => 17.99,
+                'currency' => [
+                    'id' => $this->currencyEUR->getId(),
+                ],
+            ],
+            [
+                'price' => 27.99,
+                'currency' => [
+                    'id' => $this->currencyCHF->getId(),
+                ],
+            ],
+        ];
     }
 
     /**
@@ -112,6 +160,7 @@ class VariantControllerTest extends SuluTestCase
         $this->attribute2 = $this->productTestData->createAttribute();
 
         $this->currencyEUR = $this->getCurrencyRepository()->findByCode('EUR');
+        $this->currencyCHF = $this->getCurrencyRepository()->findByCode('CHF');
 
         $this->productType = new Type();
         $this->productType->setTranslationKey('Type1');
@@ -201,50 +250,76 @@ class VariantControllerTest extends SuluTestCase
 
     /**
      * Test post for creating a new product.
-     *
-     * TODO: ADD POST STRUCTURE TO DOCUMENTATION.
      */
     public function testPost()
     {
-        $this->client->request(
-            'POST',
-            '/api/products/' . $this->product->getId() . '/variants?locale=' . self::REQUEST_LOCALE,
-            [
-                'name' => 'The new kid in town',
-                'number' => '1234',
-                'prices' => [
-                    [
-                        'price' => 17.99,
-                        'currency' => [
-                            'id' => $this->currencyEUR->getId(),
-                            'code' => 'EUR',
-                        ],
-                    ],
-                ],
-                'attributes' => [
-                    [
-                        'attributeId' => $this->attribute1->getId(),
-                        'attributeValueName' => 'Attribute-1-Value-Text',
-                    ],
-                    [
-                        'attributeId' => $this->attribute2->getId(),
-                        'attributeValueName' => 'Attribute-2-Value-Text',
-                    ],
-                ],
-            ]
-        );
+        $attributes = $this->testAttributeData;
+        $prices = $this->testPriceData;
 
-        $response = json_decode($this->client->getResponse()->getContent(), true);
+        // Perform post request.
+        $responseObject = $this->performPostRequest($attributes, $prices);
+        $this->assertEquals(200, $responseObject->getStatusCode());
+
+        // Check response.
+        $response = json_decode($responseObject->getContent(), true);
 
         $this->assertEquals('The new kid in town', $response['name']);
         $this->assertEquals('1234', $response['number']);
-        $this->asserCount(2, $response['productAttributs']);
+        $this->assertEquals($this->product->getId(), $response['parent']['id']);
 
-        $this->client->request('GET', ProductControllerTest::getGetUrlForProduct($this->productVariants[0]->getId()));
+        // Check attributes.
+        $this->assertCount(sizeof($attributes), $response['attributes']);
 
-        $response = json_decode($this->client->getResponse()->getContent());
+        // Response order independent comparison of attributes:
+        // For all given attributes compare with response data.
+        foreach($response['attributes'] as $responseAttribute) {
+            $match = null;
+            foreach($attributes as $index => $attribute) {
+                if ($attribute['attributeId'] === $responseAttribute['attributeId']) {
+                    $match = $attribute;
+                    unset($attributes[$index]);
+                    break;
+                }
+            }
+            $this->assertNotNull($match);
+            $this->assertEquals($match['attributeValueName'], $responseAttribute['attributeValueName']);
+        }
 
-        $this->assertEquals('1', $response->parent->number);
+        // Check prices.
+        $prices = $this->testPriceData;
+        $this->assertCount(sizeof($prices), $response['prices']);
+
+        foreach ($response['prices'] as $responsePrice) {
+            $match = null;
+            foreach($prices as $index => $price) {
+                if ($price['currency']['id'] === $responsePrice['currency']['id']) {
+                    $match = $price;
+                    unset($prices[$index]);
+                    break;
+                }
+            }
+            $this->assertNotNull($match);
+            $this->assertEquals($match['price'], $responsePrice['price']);
+        }
+
+        // Check if entity really is in database.
+        $this->client->request('GET', ProductControllerTest::getGetUrlForProduct($response['id']));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('The new kid in town', $response['name']);
+    }
+
+    /**
+     * Test put.
+     * First performs post to create data and then put to change it.
+     */
+    public function testPut()
+    {
+        $attributes = $this->testAttributeData;
+        $prices = $this->testPriceData;
+
+        // Perform post request.
+        $responseObject = $this->performPostRequest($attributes, $prices);
+        $this->assertEquals(200, $responseObject->getStatusCode());
     }
 
     /**
@@ -262,20 +337,6 @@ class VariantControllerTest extends SuluTestCase
             $response->message
         );
     }
-
-// FIXME: This test is not needed anymore since variant logic changed.
-//    public function testPostWithNotExistingVariant()
-//    {
-//        $this->client->request('POST', '/api/products/' . $this->product->getId() . '/variants', ['id' => 2]);
-//
-//        $response = json_decode($this->client->getResponse()->getContent());
-//
-//        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
-//        $this->assertEquals(
-//            'Entity with the type "SuluProductBundle:Product" and the id "2" not found.',
-//            $response->message
-//        );
-//    }
 
     /**
      * Test deleting a product variant.
@@ -299,6 +360,27 @@ class VariantControllerTest extends SuluTestCase
             '/api/products/' . $this->product->getId() . '/variants/' . $this->productVariants[1]->getId()
         );
         $this->assertEquals(404, $this->client->getResponse()->getStatusCode());
+    }
+
+    /**
+     * Performs a post request and returns response as array.
+     *
+     * @return Response
+     */
+    private function performPostRequest($attributes, $prices)
+    {
+        $this->client->request(
+            'POST',
+            '/api/products/' . $this->product->getId() . '/variants?locale=' . self::REQUEST_LOCALE,
+            [
+                'name' => 'The new kid in town',
+                'number' => '1234',
+                'attributes' => $attributes,
+                'prices' => $prices,
+            ]
+        );
+
+        return $this->client->getResponse();
     }
 
     /**

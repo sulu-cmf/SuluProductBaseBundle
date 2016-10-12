@@ -176,6 +176,8 @@
         <service id="sulu_product.price_manager" class="%sulu_product.price_manager.class%">
             <argument>%sulu_product.default_currency%</argument>
             <argument type="service" id="sulu_product.price_formatter"/>
+            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="sulu_product.currency_repository"/>
         </service>
         <service id="sulu_product.attribute_value_manager" class="%sulu_product.attribute_value_manager.class%">
             <argument type="service" id="sulu_product.attribute_value_repository"/>

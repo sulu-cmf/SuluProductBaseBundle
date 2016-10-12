@@ -161,7 +161,6 @@ class ProductVariantManager implements ProductVariantManagerInterface
 
         $this->processAttributes($variant, $variantData, $locale);
         $this->processPrices($variant, $variantData);
-        // TODO: process prices
     }
 
     /**
@@ -171,7 +170,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
      * @param array $variantData
      * @param string $locale
      *
-     * @throws \Exception
+     * @throws ProductException
      */
     private function processAttributes(ProductInterface $variant, array $variantData, $locale)
     {
@@ -218,16 +217,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
     }
 
     /**
-     * Returns the product type of a variant.
-     *
-     * @return Type
-     */
-    private function getTypeVariant() {
-        return $this->entityManager->getReference(Type::class, $this->productTypesMap['PRODUCT_VARIANT']);
-    }
-
-    /**
-     * Adds or updates price information for variant.
+     * Adds or updates price information for a variant.
      *
      * @param ProductInterface $variant
      * @param array $variantData
@@ -241,17 +231,28 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $currentPrices = iterator_to_array($variant->getPrices());
         foreach ($variantData['prices'] as $price) {
             $matchingEntity = null;
+
+            // Try to find existing price.
             /** @var ProductPrice $currentPrice */
             foreach ($currentPrices as $index => $currentPrice) {
-                if ($price['currency'] === $currentPrice->getCurrency()->getCode()) {
-                    $currencyMatch = $currentPrice;
+                if ($price['currency']['id'] === $currentPrice->getCurrency()->getId()) {
+                    $matchingEntity = $currentPrice;
                     unset($currentPrices[$index]);
-                }
 
-                // TODO: CURRENCY CODE OR ID??
-                if (!$currencyMatch) {
-                    $this->productPriceManager->createNewProductPriceForCurrency($price['price']);
+                    break;
                 }
+            }
+
+            // Create new price if no match was found.
+            if (!$matchingEntity) {
+                $this->productPriceManager->createNewProductPriceForCurrency(
+                    $variant,
+                    $price['price'],
+                    0,
+                    $price['currency']['id']
+                );
+            } else {
+                $matchingEntity->setPrice($price['price']);
             }
         }
 
@@ -259,5 +260,15 @@ class ProductVariantManager implements ProductVariantManagerInterface
         foreach ($currentPrices as $price) {
             $this->entityManager->remove($price);
         }
+    }
+
+    /**
+     * Returns the product type of a variant.
+     *
+     * @return Type
+     */
+    private function getTypeVariant()
+    {
+        return $this->entityManager->getReference(Type::class, $this->productTypesMap['PRODUCT_VARIANT']);
     }
 }

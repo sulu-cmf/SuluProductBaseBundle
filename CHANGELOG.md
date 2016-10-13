@@ -5,6 +5,7 @@ CHANGELOG for Sulu Product Bundle
 
     * FEATURE     Implemented new variants api to create, update and delete product variants.
     * FEATURE     Added product type key to id map as parameter to container.
+    * BUGFIX      Fixed wrong path to get action schema.
     * FEATURE     Added validation schema for get products api.
 
 * 0.15.0 (2016-09-26)

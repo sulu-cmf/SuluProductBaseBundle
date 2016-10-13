@@ -16,6 +16,7 @@ use Sulu\Bundle\ProductBundle\Api\ApiProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\Attribute;
 use Sulu\Bundle\ProductBundle\Entity\Currency;
 use Sulu\Bundle\ProductBundle\Entity\CurrencyRepository;
+use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\Status;
 use Sulu\Bundle\ProductBundle\Entity\StatusTranslation;
 use Sulu\Bundle\ProductBundle\Entity\Type;
@@ -78,7 +79,7 @@ class VariantControllerTest extends SuluTestCase
     protected $productWithVariantsType;
 
     /**
-     * @var array
+     * @var ProductInterface[]
      */
     private $productVariants = [];
 
@@ -232,6 +233,25 @@ class VariantControllerTest extends SuluTestCase
     }
 
     /**
+     * Tests if all PUT validation attributes are checked.
+     */
+    public function testCGetValidation()
+    {
+        $this->client->request(
+            'GET',
+            '/api/products/' . $this->product->getId() . '/variants?flat=true'
+        );
+
+        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        $requiredAttributes = ['locale'];
+
+        $this->checkValidationErrorAttributes($response, $requiredAttributes);
+    }
+
+    /**
      * Test flat get all variants of a product.
      */
     public function testGetAll()
@@ -246,6 +266,26 @@ class VariantControllerTest extends SuluTestCase
         $this->assertCount(2, $response->_embedded->products);
         $this->assertEquals('Productvariant', $response->_embedded->products[0]->name);
         $this->assertEquals('Another Productvariant', $response->_embedded->products[1]->name);
+    }
+
+    /**
+     * Tests if all POST validation attributes are checked.
+     */
+    public function testPostValidation()
+    {
+        $this->client->request(
+            'POST',
+            '/api/products/' . $this->product->getId() . '/variants',
+            []
+        );
+
+        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        $requiredAttributes = ['locale', 'name', 'number', 'prices', 'attributes'];
+
+        $this->checkValidationErrorAttributes($response, $requiredAttributes);
     }
 
     /**
@@ -278,6 +318,44 @@ class VariantControllerTest extends SuluTestCase
     }
 
     /**
+     * Test post when parent product does not exist.
+     */
+    public function testPostWithNotExistingParent()
+    {
+        $attributes = $this->testAttributeData;
+        $prices = $this->testPriceData;
+        $this->performPostRequest($attributes, $prices, 3);
+
+        $response = json_decode($this->client->getResponse()->getContent());
+
+        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
+        $this->assertEquals(
+            'Entity with the type "SuluProductBundle:Product" and the id "3" not found.',
+            $response->message
+        );
+    }
+
+    /**
+     * Tests if all PUT validation attributes are checked.
+     */
+    public function testPutValidation()
+    {
+        $this->client->request(
+            'PUT',
+            '/api/products/' . $this->product->getId() . '/variants/' . $this->productVariants[0]->getId(),
+            []
+        );
+
+        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        $requiredAttributes = ['locale', 'name', 'number', 'prices', 'attributes'];
+
+        $this->checkValidationErrorAttributes($response, $requiredAttributes);
+    }
+
+    /**
      * Test PUT functionality of variants api.
      * First performs post to create data and then put to change it.
      */
@@ -286,7 +364,7 @@ class VariantControllerTest extends SuluTestCase
         $attributes = $this->testAttributeData;
         $prices = $this->testPriceData;
 
-        // Perform post request.
+        // Perform POST request to create product variant.
         $responseObject = $this->performPostRequest($attributes, $prices);
         $this->assertEquals(200, $responseObject->getStatusCode());
         $response = json_decode($responseObject->getContent(), true);
@@ -294,6 +372,7 @@ class VariantControllerTest extends SuluTestCase
         $attributes[0]['attributeValueName'] = 'Changed Attribute Value';
         $prices[0]['price'] = 10.01;
 
+        // Perform PUT request to update product variant.
         $this->client->request(
             'PUT',
             sprintf(
@@ -324,22 +403,6 @@ class VariantControllerTest extends SuluTestCase
     }
 
     /**
-     * Test post when parent product does not exist.
-     */
-    public function testPostWithNotExistingParent()
-    {
-        $this->client->request('POST', '/api/products/3/variants', ['id' => $this->productVariants[0]->getId()]);
-
-        $response = json_decode($this->client->getResponse()->getContent());
-
-        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
-        $this->assertEquals(
-            'Entity with the type "SuluProductBundle:Product" and the id "3" not found.',
-            $response->message
-        );
-    }
-
-    /**
      * Test deleting a product variant.
      */
     public function testDelete()
@@ -364,18 +427,37 @@ class VariantControllerTest extends SuluTestCase
     }
 
     /**
+     * Test deleting a product variant.
+     */
+    public function testDeleteOfNonParent()
+    {
+        $this->client->request(
+            'DELETE',
+            '/api/products/' . $this->productVariants[0]->getId() . '/variants/' . $this->productVariants[1]->getId()
+        );
+        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
+        $this->assertContains('Variant does not exists for given product.', $this->client->getResponse()->getContent());
+    }
+
+    /**
      * Performs a post request and returns response object.
      *
      * @param array $attributes
      * @param array $prices
+     * @param null|int $parentId
      *
      * @return Response
      */
-    private function performPostRequest($attributes, $prices)
+    private function performPostRequest($attributes, $prices, $parentId = null)
     {
+        // Fallback parent product.
+        if (null === $parentId) {
+            $parentId = $this->product->getId();
+        }
+
         $this->client->request(
             'POST',
-            '/api/products/' . $this->product->getId() . '/variants?locale=' . self::REQUEST_LOCALE,
+            '/api/products/' . $parentId . '/variants?locale=' . self::REQUEST_LOCALE,
             [
                 'name' => 'The new kid in town',
                 'number' => '1234',
@@ -477,5 +559,18 @@ class VariantControllerTest extends SuluTestCase
         $productTypesMap = $this->getContainer()->getParameter('sulu_product.product_types_map');
 
         return $productTypesMap[$key];
+    }
+
+    /**
+     * @param array $validationResponse
+     * @param array $requiredAttributes
+     */
+    private function checkValidationErrorAttributes(array $validationResponse, array $requiredAttributes)
+    {
+        $this->assertCount(sizeof($requiredAttributes), $validationResponse);
+
+        foreach ($validationResponse as $responseAttribute) {
+            $this->assertContains($responseAttribute['property'], $requiredAttributes);
+        }
     }
 }

@@ -60,7 +60,12 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
                 'sulu_validation',
                 [
                     'schemas' => [
+                        //Products
                         'get_product' => '@SuluProductBundle/Validation/Products/getActionSchema.json',
+                        // Variants
+                        'get_product_variants' => '@SuluProductBundle/Validation/Variants/cGetActionSchema.json',
+                        'post_product_variant' => '@SuluProductBundle/Validation/Variants/postPutActionSchema.json',
+                        'put_product_variant' => '@SuluProductBundle/Validation/Variants/postPutActionSchema.json',
                     ],
                 ]
             );

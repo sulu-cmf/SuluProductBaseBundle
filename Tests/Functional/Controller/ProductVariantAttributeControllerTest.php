@@ -12,9 +12,12 @@
 namespace Sulu\Bundle\ProductBundle\Tests\Functional\Controller;
 
 use Doctrine\ORM\EntityManager;
+use Sulu\Bundle\ProductBundle\Entity\Attribute;
 use Sulu\Bundle\ProductBundle\Entity\AttributeType;
+use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Tests\Resources\ProductTestData;
 use Sulu\Bundle\TestBundle\Testing\SuluTestCase;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Client;
 
 class ProductVariantAttributeControllerTest extends SuluTestCase
@@ -50,6 +53,16 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
     private $productTestData;
 
     /**
+     * @var ProductInterface
+     */
+    private $product;
+
+    /**
+     * @var Attribute
+     */
+    private $attribute;
+
+    /**
      * {@inheritdoc}
      */
     public function setUp()
@@ -75,17 +88,30 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
         $product->addVariantAttribute($attribute1);
         $product->addVariantAttribute($attribute2);
 
+        // Add variantAttributes to another product to make test environment more complex.
+        $product2 = $this->productTestData->getProduct2();
+        $product2->addVariantAttribute($this->productTestData->createAttribute());
+
+        $this->product = $this->productTestData->createProduct();
+        $this->attribute = $this->productTestData->createAttribute();
+
         $this->entityManager->flush();
     }
 
     /**
      * Returns base path for receiving variantAttributes.
      *
+     * @param int|null $productId
+     *
      * @return string
      */
-    private function getBasePath()
+    private function getBasePath($productId = null)
     {
-        return sprintf('/api/products/%s/variant-attributes', $this->productTestData->getProduct()->getId());
+        if (!$productId) {
+            $productId = $this->productTestData->getProduct()->getId();
+        }
+
+        return sprintf('/api/products/%s/variant-attributes', $productId);
     }
 
     /**
@@ -93,23 +119,77 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
      */
     public function testGetFields()
     {
-        $this->client->request('GET', '/api/product-variant-attributes/fields');
-        $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
+        $this->client->request('GET', '/api/product-variant-attributes/fields?locale=' . static::REQUEST_LOCALE);
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
 
         $response = json_decode($this->client->getResponse()->getContent());
         $this->assertGreaterThanOrEqual(2, $response);
     }
 
     /**
-     * Get all available attributes.
+     * Test cGET all available variant attributes for a certain product.
      */
     public function testGetAll()
     {
         $this->client->request('GET', $this->getBasePath() . '?flat=true&locale=' . static::REQUEST_LOCALE);
-        $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
 
         $response = json_decode($this->client->getResponse()->getContent(), true);
         $attributes = $response['_embedded']['variantAttributes'];
         $this->assertCount(2, $attributes);
+    }
+
+    /**
+     * Test POST to create a new variant-attribute relation.
+     */
+    public function testPost()
+    {
+        $this->client->request(
+            'POST',
+            $this->getBasePath($this->product->getId()),
+            [
+                'attributeId' => $this->attribute->getId(),
+            ]
+        );
+        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+
+        $this->client->request(
+            'GET',
+            $this->getBasePath($this->product->getId()) . '?flat=true&locale=' . static::REQUEST_LOCALE
+        );
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $attributes = $response['_embedded']['variantAttributes'];
+        $this->assertCount(1, $attributes);
+        $this->assertEquals($this->attribute->getId(), $attributes[0]['id']);
+    }
+
+    /**
+     * Test DELETE to remove a variant-attribute relation.
+     */
+    public function testDelete()
+    {
+        $this->product->addVariantAttribute($this->attribute);
+        $this->getEntityManager()->flush();
+
+        $this->client->request(
+            'DELETE',
+            $this->getBasePath($this->product->getId()) . '/' . $this->attribute->getId(),
+            []
+        );
+        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+    }
+
+    /**
+     * Test DELETE on a non existing variant-attribute relation.
+     */
+    public function testDeleteNonExistingRelation()
+    {
+        $this->client->request(
+            'DELETE',
+            $this->getBasePath($this->product->getId()) . '/' . $this->attribute->getId(),
+            []
+        );
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
     }
 }

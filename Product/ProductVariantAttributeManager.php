@@ -11,7 +11,12 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Sulu\Bundle\ProductBundle\Entity\Attribute;
+use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
+use Sulu\Bundle\ProductBundle\Product\Exception\AttributeNotFoundException;
+use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
+use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
+use Sulu\Bundle\ProductBundle\Traits\UtilitiesTrait;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescriptor;
 
@@ -20,21 +25,34 @@ use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescrip
  */
 class ProductVariantAttributeManager
 {
+    use UtilitiesTrait;
+
     private static $attributeEntityName = 'SuluProductBundle:Attribute';
     private static $attributeTranslationEntityName = 'SuluProductBundle:AttributeTranslation';
     private static $productEntityName = 'SuluProductBundle:Product';
-    /**
-     * @var ObjectManager
-     */
-    private $entityManager;
 
     /**
-     * @param ObjectManager $entityManager
+     * @var ProductRepositoryInterface
+     */
+    private $productRepository;
+
+    /**
+     * @var AttributeRepositoryInterface
+     */
+    private $attributeRepository;
+
+    /**
+     * @param ProductRepositoryInterface $productRepository
+     * @param AttributeRepositoryInterface $attributeRepository
+     *
+     * @internal param ObjectManager $entityManager
      */
     public function __construct(
-        ObjectManager $entityManager
+        ProductRepositoryInterface $productRepository,
+        AttributeRepositoryInterface $attributeRepository
     ) {
-        $this->entityManager = $entityManager;
+        $this->productRepository = $productRepository;
+        $this->attributeRepository = $attributeRepository;
     }
 
     /**
@@ -84,5 +102,89 @@ class ProductVariantAttributeManager
         );
 
         return $fieldDescriptors;
+    }
+
+    /**
+     * Creates a new relation between variant and attribute.
+     *
+     * @param int $productId
+     * @param array $requestData
+     *
+     * @throws AttributeNotFoundException
+     * @throws ProductNotFoundException
+     *
+     * @return ProductInterface
+     */
+    public function createVariantAttributeRelation($productId, array $requestData)
+    {
+        $variant = $this->retrieveProductById($productId);
+        $attribute = $this->retrieveAttributeById($this->getProperty($requestData, 'attributeId'));
+
+        $variant->addVariantAttribute($attribute);
+
+        return $variant;
+    }
+
+    /**
+     * Removes relation between variant and attribute.
+     *
+     * @param int $productId
+     * @param int $attributeId
+     *
+     * @throws ProductException
+     *
+     * @return ProductInterface
+     */
+    public function removeVariantAttributeRelation($productId, $attributeId)
+    {
+        $variant = $this->retrieveProductById($productId);
+        $attribute = $this->retrieveAttributeById($attributeId);
+
+        if (!$variant->getVariantAttributes()->contains($attribute)) {
+            throw new ProductException('Variant does not have relation to attribute');
+        }
+
+        $variant->removeVariantAttribute($attribute);
+
+        return $variant;
+    }
+
+    /**
+     * Fetches attribute from db. If not found an exception is thrown.
+     *
+     * @param int $attributeId
+     *
+     * @throws AttributeNotFoundException
+     *
+     * @return Attribute
+     */
+    private function retrieveAttributeById($attributeId)
+    {
+        $attribute = $this->attributeRepository->find($attributeId);
+        if (!$attribute) {
+            throw new AttributeNotFoundException($attributeId);
+        }
+
+        return $attribute;
+    }
+
+    /**
+     * Fetches product from db. If not found an exception is thrown.
+     *
+     * @param int $productId
+     *
+     * @throws ProductNotFoundException
+     *
+     * @return ProductInterface
+     */
+    private function retrieveProductById($productId)
+    {
+        // Fetch product.
+        $product = $this->productRepository->find($productId);
+        if (!$product) {
+            throw new ProductNotFoundException($productId);
+        }
+
+        return $product;
     }
 }

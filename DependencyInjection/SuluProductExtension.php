@@ -15,7 +15,6 @@ use Sulu\Bundle\PersistenceBundle\DependencyInjection\PersistenceExtensionTrait;
 use Sulu\Bundle\ProductBundle\DataFixtures\ORM\ProductTypes\LoadProductTypes;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
@@ -82,9 +81,11 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
     {
         $productTypeMap = [];
 
-        LoadProductTypes::processProductTypesFixtures(function(\DOMElement $element) use (&$productTypeMap) {
-            $productTypeMap[$element->getAttribute('key')] = $element->getAttribute('id');
-        });
+        LoadProductTypes::processProductTypesFixtures(
+            function (\DOMElement $element) use (&$productTypeMap) {
+                $productTypeMap[$element->getAttribute('key')] = $element->getAttribute('id');
+            }
+        );
 
         return $productTypeMap;
     }

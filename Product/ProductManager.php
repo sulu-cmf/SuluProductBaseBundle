@@ -1697,8 +1697,8 @@ class ProductManager implements ProductManagerInterface
      */
     protected function getExistingActiveOrInactiveProduct($existingProduct, $statusId, $locale)
     {
-        if (($statusId == StatusEntity::ACTIVE || $statusId == StatusEntity::INACTIVE) &&
-            $existingProduct->getStatus()->getId() != $statusId
+        if (($statusId == StatusEntity::ACTIVE || $statusId == StatusEntity::INACTIVE)
+            && $existingProduct->getStatus()->getId() != $statusId
         ) {
             // Check if the same product already exists in IMPORTED state
             $products = $this->productRepository->findByLocaleAndInternalItemNumber(
@@ -1736,9 +1736,11 @@ class ProductManager implements ProductManagerInterface
         $product->setStatus($status);
 
         // If product has variants, set status for all variants as well.
-        if ($product->getType() && $product->getType()->getId() === $this->productTypesMap['PRODUCT_WITH_VARIANTS']) {
+        if ($product->getType()
+            && $product->getType()->getId() === (int) $this->productTypesMap['PRODUCT_WITH_VARIANTS']
+        ) {
             $variants = $this->productRepository->findByParent($product);
-            foreach($variants as $variant) {
+            foreach ($variants as $variant) {
                 $variant->setStatus($status);
             }
         }

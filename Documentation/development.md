@@ -6,16 +6,15 @@ This documentation contains information about product-bundle development.
 
 ### Type
 
-Types are loaded into the database and the container with data-fixtures.
-They are accessible with the following parameter: `sulu_product.product_types_map`
-
-This parameter contains a key to id mapping:
+Types are loaded into the database the with data-fixtures.
+They are accessible as key to id map with the following parameter: `sulu_product.product_types_map`
 
 e.g.
 
 ```
 [
-  PRODUCT_VARIANT => 5,
+  'PRODUCT' => 1,
+  'PRODUCT_VARIANT' => 5,
 ]
 ```
 

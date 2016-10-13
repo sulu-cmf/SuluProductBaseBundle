@@ -13,6 +13,9 @@ namespace Sulu\Bundle\ProductBundle\Product;
 
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 
+/**
+ * This interface contains all methods a ProductVariantManager needs to implement.
+ */
 interface ProductVariantManagerInterface
 {
     /**

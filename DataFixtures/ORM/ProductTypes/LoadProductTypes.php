@@ -53,7 +53,7 @@ class LoadProductTypes implements FixtureInterface, OrderedFixtureInterface
         $metadata = $manager->getClassMetaData(Type::class);
         $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_NONE);
 
-        static::processProductTypesFixtures(function($element) use ($manager) {
+        static::processProductTypesFixtures(function(\DOMElement $element) use ($manager) {
             $type = new Type();
             $type->setId($element->getAttribute('id'));
             $type->setTranslationKey($element->getAttribute('translation-key'));

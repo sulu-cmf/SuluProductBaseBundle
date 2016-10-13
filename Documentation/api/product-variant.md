@@ -1,14 +1,14 @@
-# Product Addon API
+# Product Variant API
 
 ## cGET
 
-URL: /admin/api/products/{productId}/variants
+URL: /admin/api/products/{productId}/variants?locale={locale}
 
 cGet response will look the same as the `/api/products` api call.
 
 ## POST
 
-URL: /admin/api/products/{productId}/variants
+URL: /admin/api/products/{productId}/variants?locale={locale}
 
 Payload:
 
@@ -35,7 +35,7 @@ Payload:
 
 ## PUT
 
-URL: /admin/api/products/{productId}/variants/{variantId}
+URL: /admin/api/products/{productId}/variants/{variantId}?locale={locale}
 
 Payload looks exactly the same as POST.
 

@@ -19,7 +19,12 @@ use Sulu\Bundle\ProductBundle\Entity\TypeRepository;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 use Sulu\Bundle\ProductBundle\Traits\UtilitiesTrait;
+use Sulu\Component\Security\Authentication\UserInterface;
+use Sulu\Component\Security\Authentication\UserRepositoryInterface;
 
+/**
+ * The ProductVariantManager contains functionality for create, update and delete product variants.
+ */
 class ProductVariantManager implements ProductVariantManagerInterface
 {
     use UtilitiesTrait;
@@ -65,6 +70,11 @@ class ProductVariantManager implements ProductVariantManagerInterface
     private $productPriceManager;
 
     /**
+     * @var UserRepositoryInterface
+     */
+    private $userRepository;
+
+    /**
      * @param EntityManagerInterface $entityManager
      * @param ProductManagerInterface $productManager
      * @param ProductRepositoryInterface $productRepository
@@ -72,6 +82,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
      * @param ProductAttributeManager $productAttributeManager
      * @param TypeRepository $typeRepository
      * @param ProductPriceManager $productPriceManager
+     * @param UserRepositoryInterface $userRepository
      * @param array $productTypesMap
      */
     public function __construct(
@@ -82,6 +93,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
         ProductAttributeManager $productAttributeManager,
         TypeRepository $typeRepository,
         ProductPriceManager $productPriceManager,
+        UserRepositoryInterface $userRepository,
         array $productTypesMap
     ) {
         $this->entityManager = $entityManager;
@@ -90,12 +102,13 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $this->productFactory = $productFactory;
         $this->productAttributeManager = $productAttributeManager;
         $this->productTypeRepository = $typeRepository;
-        $this->productTypesMap = $productTypesMap;
         $this->productPriceManager = $productPriceManager;
+        $this->userRepository = $userRepository;
+        $this->productTypesMap = $productTypesMap;
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function createVariant($parentId, array $variantData, $locale, $userId)
     {
@@ -114,11 +127,11 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $variant->setParent($parent);
         $variant->setType($this->getTypeVariantReference());
         $variant->setStatus($parent->getStatus());
+        $variant->setCreator($this->getUserReferenceById($userId));
+        $variant->setCreated(new \DateTime());
 
         // Set data to variant.
-        $this->mapDataToVariant($variant, $variantData, $locale);
-
-        // TODO: set creator and changer for creation and update.
+        $this->mapDataToVariant($variant, $variantData, $locale, $userId);
 
         return $variant;
     }
@@ -135,18 +148,18 @@ class ProductVariantManager implements ProductVariantManagerInterface
         }
 
         // Check if product is variant.
-        if ($variant->getType()->getId() !== (int)$this->productTypesMap['PRODUCT_VARIANT']) {
+        if ($variant->getType()->getId() !== (int) $this->productTypesMap['PRODUCT_VARIANT']) {
             throw new ProductException('Product is no variant and therefore cannot be updated');
         }
 
         // Set data to variant.
-        $this->mapDataToVariant($variant, $variantData, $locale);
+        $this->mapDataToVariant($variant, $variantData, $locale, $userId);
 
         return $variant;
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function deleteVariant($variantId)
     {
@@ -155,7 +168,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
         if (!$variant) {
             throw new ProductNotFoundException($variantId);
         }
-        if ($variant->getType()->getId() !== (int)$this->productTypesMap['PRODUCT_VARIANT']) {
+        if ($variant->getType()->getId() !== (int) $this->productTypesMap['PRODUCT_VARIANT']) {
             throw new ProductException('Product is no variant and therefore cannot be deleted');
         }
 
@@ -168,8 +181,9 @@ class ProductVariantManager implements ProductVariantManagerInterface
      * @param ProductInterface $variant
      * @param array $variantData
      * @param string $locale
+     * @param int $userId
      */
-    private function mapDataToVariant(ProductInterface $variant, array $variantData, $locale)
+    private function mapDataToVariant(ProductInterface $variant, array $variantData, $locale, $userId)
     {
         $productTranslation = $this->productManager->retrieveOrCreateProductTranslationByLocale($variant, $locale);
         $productTranslation->setName($this->getProperty($variantData, 'name'));
@@ -178,6 +192,13 @@ class ProductVariantManager implements ProductVariantManagerInterface
 
         $this->processAttributes($variant, $variantData, $locale);
         $this->processPrices($variant, $variantData);
+
+        // Check if entity is going to be updated.
+        $this->entityManager->getUnitOfWork()->computeChangeSets();
+        if ($this->entityManager->getUnitOfWork()->isScheduledForUpdate($variant)) {
+            $variant->setChanger($this->getUserReferenceById($userId));
+            $variant->setChanged(new \DateTime());
+        }
     }
 
     /**
@@ -194,38 +215,37 @@ class ProductVariantManager implements ProductVariantManagerInterface
         $parent = $variant->getParent();
 
         // Number of attributes in variantData and parents variant-attributes need to match and must not be 0.
-        $sizeOfVariantAttributes = sizeof($this->getProperty($variantData, 'attributes'));
+        $sizeOfVariantAttributes = count($this->getProperty($variantData, 'attributes'));
         $sizeOfParentAttributes = $parent->getVariantAttributes()->count();
         if (!$sizeOfVariantAttributes
             || !$sizeOfParentAttributes
             || $sizeOfVariantAttributes != $sizeOfParentAttributes
         ) {
-            throw new ProductException('Invalid number of attributes for variant provided!');
+            throw new ProductException('Invalid number of attributes for variant provided.');
         }
 
         $attributesDataCopy = $variantData['attributes'];
 
-        //TODO: Define schema with attributeId and AttributeValueName
         // For all variants of parent, find corresponding attribute in variant-data.
         foreach ($parent->getVariantAttributes() as $variantAttribute) {
             foreach ($attributesDataCopy as $index => $attributeData) {
                 if ($variantAttribute->getId() === $attributeData['attributeId']) {
-                    // Update or create ProductAttribte for variant.
+                    // Update or create ProductAttribute for variant.
                     $this->productAttributeManager->updateOrCreateProductAttributeForProduct(
                         $variant,
                         $variantAttribute,
                         $attributeData,
                         $locale
                     );
-                    // Remove from data to speed up things.
+
                     unset($attributesDataCopy[$index]);
                 }
             }
         }
 
-        // Not all necessary variant attributes were defined in data array!
-        if (sizeof($attributesDataCopy)) {
-            throw new ProductException('Invalid attributes for variant provided!');
+        // Not all necessary variant attributes were defined in data array.
+        if (count($attributesDataCopy)) {
+            throw new ProductException('Invalid attributes for variant provided.');
         }
     }
 
@@ -237,7 +257,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
      */
     private function processPrices(ProductInterface $variant, array $variantData)
     {
-        if (!sizeof($variantData['prices'])) {
+        if (!count($variantData['prices'])) {
             return;
         }
 
@@ -265,6 +285,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
                     $price['currency']['id']
                 );
             } else {
+                // Otherwise just update price.
                 $matchingEntity->setPrice($price['price']);
             }
         }
@@ -275,10 +296,17 @@ class ProductVariantManager implements ProductVariantManagerInterface
         }
     }
 
-//    private function getUserReference($userId)
-//    {
-//        return $this->entityManager->getReference($this->userR)
-//    }
+    /**
+     * Returns a reference to a user by providing a user-id.
+     *
+     * @param int $userId
+     *
+     * @return UserInterface
+     */
+    private function getUserReferenceById($userId)
+    {
+        return $this->entityManager->getReference($this->userRepository->getClassName(), $userId);
+    }
 
     /**
      * Returns the product type of a variant.

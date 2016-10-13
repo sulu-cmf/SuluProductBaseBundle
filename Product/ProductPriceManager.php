@@ -11,7 +11,6 @@
 
 namespace Sulu\Bundle\ProductBundle\Product;
 
-use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\Annotation\Groups;
 use Sulu\Bundle\ProductBundle\Entity\Addon;
 use Sulu\Bundle\ProductBundle\Entity\AddonPrice;
@@ -19,9 +18,12 @@ use Sulu\Bundle\ProductBundle\Entity\CurrencyRepository;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Entity\ProductPrice;
 use Sulu\Bundle\ProductBundle\Entity\SpecialPrice;
+use Sulu\Bundle\ProductBundle\Product\Exception\ProductDependencyNotFoundException;
 use Sulu\Bundle\ProductBundle\Util\PriceFormatter;
-use Sulu\Component\Rest\Exception\EntityNotFoundException;
 
+/**
+ * Product price manager is responsible for creating and returning the correct product prices.
+ */
 class ProductPriceManager implements ProductPriceManagerInterface
 {
     /**
@@ -40,26 +42,18 @@ class ProductPriceManager implements ProductPriceManagerInterface
     private $currencyRepository;
 
     /**
-     * @var EntityManagerInterface
-     */
-    private $entityManager;
-
-    /**
      * @param string $defaultCurrency
      * @param PriceFormatter $priceFormatter
-     * @param EntityManagerInterface $entityManager
      * @param CurrencyRepository $currencyRepository
      */
     public function __construct(
         $defaultCurrency,
         PriceFormatter $priceFormatter,
-        EntityManagerInterface $entityManager,
         CurrencyRepository $currencyRepository
     ) {
         $this->defaultCurrency = $defaultCurrency;
         $this->priceFormatter = $priceFormatter;
         $this->currencyRepository = $currencyRepository;
-        $this->entityManager = $entityManager;
     }
 
     /**
@@ -68,7 +62,7 @@ class ProductPriceManager implements ProductPriceManagerInterface
      * @param float $minimumQuantity
      * @param null|int $currencyId
      *
-     * @throws EntityNotFoundException
+     * @throws ProductDependencyNotFoundException
      *
      * @return ProductPrice
      */
@@ -84,8 +78,9 @@ class ProductPriceManager implements ProductPriceManagerInterface
         } else {
             $currency = $this->currencyRepository->find($currencyId);
         }
+
         if (!$currency) {
-            throw new EntityNotFoundException($this->currencyRepository->getClassName(), $currencyId);
+            throw new ProductDependencyNotFoundException($this->currencyRepository->getClassName(), $currencyId);
         }
 
         $productPrice = new ProductPrice();
@@ -221,7 +216,7 @@ class ProductPriceManager implements ProductPriceManagerInterface
         }
 
         return $this->priceFormatter->format(
-            (float)$price,
+            (float) $price,
             null,
             $locale,
             $symbol,

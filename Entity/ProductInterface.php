@@ -442,7 +442,6 @@ interface ProductInterface
      */
     public function removeVariantAttribute(Attribute $attribute);
 
-
     /**
      * Add translations.
      *

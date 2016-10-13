@@ -122,7 +122,8 @@ You can write multiple attribute fixture files and define the path of your xmls 
 # API Documentation
 
 The following api's have been documented:
-[Product Addon Api](Documentation/product-addon.md)
+[Product Addon Api](Documentation/api/product-addon.md)
+[Product Variant Api](Documentation/api/product-variant.md)
 
 # Developer Documentation
 

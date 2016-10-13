@@ -1,5 +1,5 @@
 {
-    "title": "Get product by id schema",
+    "title": "Get all variants of a product schema",
     "type": "object",
     "properties": {
         "locale": {

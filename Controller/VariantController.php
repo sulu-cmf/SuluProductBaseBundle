@@ -11,7 +11,7 @@
 
 namespace Sulu\Bundle\ProductBundle\Controller;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use Hateoas\Representation\CollectionRepresentation;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
@@ -183,7 +183,7 @@ class VariantController extends RestController implements ClassResourceInterface
                 $userId
             );
 
-            if ($variant->getParent()->getId() !== (int)$parentId) {
+            if ($variant->getParent()->getId() !== (int) $parentId) {
                 throw new ProductException('Variant does not exists for given product.');
             }
 
@@ -215,7 +215,7 @@ class VariantController extends RestController implements ClassResourceInterface
         try {
             $variant = $this->getProductVariantManager()->deleteVariant($variantId);
 
-            if ($variant->getParent()->getId() !== (int)$parentId) {
+            if ($variant->getParent()->getId() !== (int) $parentId) {
                 throw new ProductException('Variant does not exists for given product.');
             }
             $this->getEntityManager()->flush();
@@ -248,7 +248,7 @@ class VariantController extends RestController implements ClassResourceInterface
     }
 
     /**
-     * @return EntityManager
+     * @return EntityManagerInterface
      */
     private function getEntityManager()
     {
@@ -262,4 +262,4 @@ class VariantController extends RestController implements ClassResourceInterface
     {
         return $this->get('sulu_product.product_variant_manager');
     }
-} 
+}

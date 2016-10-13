@@ -47,14 +47,14 @@ interface ProductManagerInterface
      */
     public function findAllByLocale($locale, $filter = []);
 
-   /**
-    * Returns all products in the given locale and one of the ids.
-    *
-    * @param string $locale
-    * @param array $ids
-    *
-    * @return Product[]
-    */
+    /**
+     * Returns all products in the given locale and one of the ids.
+     *
+     * @param string $locale
+     * @param array $ids
+     *
+     * @return Product[]
+     */
     public function findAllByIdsAndLocale($locale, $ids);
 
     /**

@@ -26,6 +26,9 @@ use Sulu\Bundle\TestBundle\Testing\SuluTestCase;
 use Symfony\Bundle\FrameworkBundle\Client;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * This class contains tests for product variants.
+ */
 class VariantControllerTest extends SuluTestCase
 {
     /**
@@ -188,7 +191,7 @@ class VariantControllerTest extends SuluTestCase
         $this->product->setName('Product with Variants');
         $this->product->setNumber('1');
         $this->product->setStatus($this->activeStatus);
-        $this->product->setType($this->productType);
+        $this->product->setType($this->productWithVariantsType);
 
         $productEntity->addVariantAttribute($this->attribute1);
         $productEntity->addVariantAttribute($this->attribute2);
@@ -202,7 +205,7 @@ class VariantControllerTest extends SuluTestCase
         $productVariant1->setName('Productvariant');
         $productVariant1->setNumber('2');
         $productVariant1->setStatus($this->activeStatus);
-        $productVariant1->setType($this->getTypeVariantReference());
+        $productVariant1->setType($this->getVariantTypeReference());
         $productVariant1->setParent($this->product);
         $this->em->persist($productVariant1->getEntity());
         $this->productVariants[] = $productVariant1;
@@ -214,7 +217,7 @@ class VariantControllerTest extends SuluTestCase
         $productVariant2->setName('Another Productvariant');
         $productVariant2->setNumber('3');
         $productVariant2->setStatus($this->activeStatus);
-        $productVariant2->setType($this->getTypeVariantReference());
+        $productVariant2->setType($this->getVariantTypeReference());
         $productVariant2->setParent($this->product);
         $this->em->persist($productVariant2->getEntity());
         $this->productVariants[] = $productVariant2;
@@ -448,7 +451,7 @@ class VariantControllerTest extends SuluTestCase
      *
      * @return Response
      */
-    private function performPostRequest($attributes, $prices, $parentId = null)
+    private function performPostRequest(array $attributes, array $prices, $parentId = null)
     {
         // Fallback parent product.
         if (null === $parentId) {
@@ -491,16 +494,16 @@ class VariantControllerTest extends SuluTestCase
      * @param array $attributes
      * @param array $response
      */
-    private function checkAttributes($attributes, $response)
+    private function checkAttributes(array $attributes, array $response)
     {
         // Check attributes.
-        $this->assertCount(sizeof($attributes), $response['attributes']);
+        $this->assertCount(count($attributes), $response['attributes']);
 
         // Response order independent comparison of attributes:
         // For all given attributes compare with response data.
-        foreach($response['attributes'] as $responseAttribute) {
+        foreach ($response['attributes'] as $responseAttribute) {
             $match = null;
-            foreach($attributes as $index => $attribute) {
+            foreach ($attributes as $index => $attribute) {
                 if ($attribute['attributeId'] === $responseAttribute['attributeId']) {
                     $match = $attribute;
                     unset($attributes[$index]);
@@ -518,14 +521,14 @@ class VariantControllerTest extends SuluTestCase
      * @param array $prices
      * @param array $response
      */
-    private function checkPrices($prices, $response)
+    private function checkPrices(array $prices, array $response)
     {
         // Check prices.
-        $this->assertCount(sizeof($prices), $response['prices']);
+        $this->assertCount(count($prices), $response['prices']);
 
         foreach ($response['prices'] as $responsePrice) {
             $match = null;
-            foreach($prices as $index => $price) {
+            foreach ($prices as $index => $price) {
                 if ($price['currency']['id'] === $responsePrice['currency']['id']) {
                     $match = $price;
                     unset($prices[$index]);
@@ -542,7 +545,7 @@ class VariantControllerTest extends SuluTestCase
      *
      * @return Type
      */
-    private function getTypeVariantReference()
+    private function getVariantTypeReference()
     {
         return $this->getEntityManager()->getReference(Type::class, $this->retrieveTypeIdByKey('PRODUCT_VARIANT'));
     }
@@ -567,7 +570,7 @@ class VariantControllerTest extends SuluTestCase
      */
     private function checkValidationErrorAttributes(array $validationResponse, array $requiredAttributes)
     {
-        $this->assertCount(sizeof($requiredAttributes), $validationResponse);
+        $this->assertCount(count($requiredAttributes), $validationResponse);
 
         foreach ($validationResponse as $responseAttribute) {
             $this->assertContains($responseAttribute['property'], $requiredAttributes);

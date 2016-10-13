@@ -41,6 +41,7 @@
         <parameter key="sulu_product.js_config.class">Sulu\Bundle\AdminBundle\Admin\JsConfig</parameter>
         <parameter key="sulu_product.price_formatter.class">Sulu\Bundle\ProductBundle\Util\PriceFormatter</parameter>
         <parameter key="sulu_product.product_attribute_manager.class">Sulu\Bundle\ProductBundle\Product\ProductAttributeManager</parameter>
+        <parameter key="sulu_product.product_variant_attribute_manager.class">Sulu\Bundle\ProductBundle\Product\ProductVariantAttributeManager</parameter>
     </parameters>
     <services>
         <!-- ADMIN -->
@@ -152,6 +153,9 @@
             <argument>%sulu_product.default_currency%</argument>
             <argument type="service" id="sulu_product.product_attribute_manager"/>
             <argument>%sulu_product.product_types_map%</argument>
+        </service>
+        <service id="sulu_product.product_variant_attribute_manager" class="%sulu_product.product_variant_attribute_manager.class%">
+            <argument type="service" id="doctrine.orm.entity_manager"/>
         </service>
         <service id="sulu_product.product_attribute_manager" class="%sulu_product.product_attribute_manager.class%">
             <argument type="service" id="doctrine.orm.entity_manager"/>

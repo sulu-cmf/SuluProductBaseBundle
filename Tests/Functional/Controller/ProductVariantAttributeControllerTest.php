@@ -131,7 +131,7 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
      */
     public function testGetAll()
     {
-        $this->client->request('GET', $this->getBasePath() . '?flat=true&locale=' . static::REQUEST_LOCALE);
+        $this->client->request('GET', $this->getBasePath() . '?locale=' . static::REQUEST_LOCALE);
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
 
         $response = json_decode($this->client->getResponse()->getContent(), true);
@@ -155,7 +155,7 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
 
         $this->client->request(
             'GET',
-            $this->getBasePath($this->product->getId()) . '?flat=true&locale=' . static::REQUEST_LOCALE
+            $this->getBasePath($this->product->getId()) . '?locale=' . static::REQUEST_LOCALE
         );
 
         $response = json_decode($this->client->getResponse()->getContent(), true);

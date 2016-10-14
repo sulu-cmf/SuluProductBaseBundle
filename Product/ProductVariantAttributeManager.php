@@ -44,8 +44,6 @@ class ProductVariantAttributeManager
     /**
      * @param ProductRepositoryInterface $productRepository
      * @param AttributeRepositoryInterface $attributeRepository
-     *
-     * @internal param ObjectManager $entityManager
      */
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -56,7 +54,7 @@ class ProductVariantAttributeManager
     }
 
     /**
-     * Returns all fielddescriptors for variant attributes.
+     * Returns all field-descriptors for variant attributes.
      *
      * @return DoctrineFieldDescriptor[]
      */

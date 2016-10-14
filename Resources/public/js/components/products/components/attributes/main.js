@@ -1,5 +1,5 @@
 /*
- * This file is part of the Sulu CMS.
+ * This file is part of Sulu.
  *
  * (c) MASSIVE ART WebServices GmbH
  *
@@ -9,12 +9,12 @@
 
 define([
     'config',
-    'text!suluproduct/components/products/components/attributes/overlay-content.html'
-], function(Config, OverlayTpl) {
+    'text!suluproduct/components/products/components/attributes/overlay-content.html',
+    'services/product-type-manager'
+], function(Config, OverlayTpl, ProductTypeManager) {
     'use strict';
 
-    var formSelector = '#product-attributes-form',
-        productAttributesInstanceName = 'product-attribute-list-toolbar',
+    var productAttributesInstanceName = 'product-attribute-list-toolbar',
         datagridInstanceName = 'product-attribute-datagrid',
         overlayInstanceName = 'product-attribute-overlay',
         selectInstanceName = 'product-attribute-select',
@@ -26,68 +26,111 @@ define([
             UPDATE: 3
         },
 
+        // constants = {
+        //     productAttributesDataGridInstanceName = 'product-attribute-datagrid',
+        // },
+
+        selectors = {
+            variantAttributesContainer: '#js-variant-attributes-container'
+            // productAttributesForm: '#js-product-attributes-form',
+            // variantAttributesForm: '#js-variant-attributes-form'
+        },
+
+
         /**
-         * bind custom events
+         * Bind custom events.
          */
         bindCustomEvents = function() {
-            this.sandbox.on('sulu.toolbar.delete', function() {
-                this.sandbox.emit('sulu.product.delete', this.options.data.id);
-            }.bind(this));
+            this.sandbox.on('sulu.toolbar.delete', onDeleteClicked.bind(this));
 
-            this.sandbox.on('product.state.change', function(status) {
-                if (!this.options.data ||
-                    !this.options.data.attributes.status ||
-                    this.options.data.attributes.status.id !== status.id
-                ) {
-                    this.status = status;
-                    this.options.data.attributes.status = this.status;
-                    setHeaderBar.call(this, false);
-                }
-            }, this);
+            this.sandbox.on('product.state.change', onStatusChanged.bind(this));
 
-            this.sandbox.on('sulu.toolbar.save', function() {
-                this.sendData = {};
-                this.sendData.status = this.status;
-                this.sendData.id = this.options.data.id;
-                save.call(this);
-            }, this);
+            this.sandbox.on('sulu.toolbar.save', onSaveClicked.bind(this));
 
-            this.sandbox.on('sulu.products.saved', function(data) {
+            this.sandbox.on('sulu.products.saved', onProductSaved.bind(this));
 
-                var attributes = data.attributes;
-
-                // Select action
-                if (data.action === actions.ADD) {
-                    // ADD RECORD IN DATAGRID
-                    var attribute = _.findWhere(attributes, {'attributeId': data.attributeIdAdded});
-                    this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.record.add', attribute);
-                } else if (data.action === actions.DELETE) {
-                    // DELETE RECORDs IN DATAGRID
-                    $.each(data.attributeIdsDeleted, function(key, id) {
-                        this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.record.remove', id);
-                    }.bind(this));
-                } else if (data.action === actions.UPDATE) {
-                    // UPDATE DATAGRID WITH RECEIVED RECORDS
-                    this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.records.set', attributes);
-                }
-
-                setHeaderBar.call(this, true);
-                //this.options.data = data;
-                this.options.data.attributes.status = this.status;
-            }, this);
-
-            // enable toolbar items
-            this.sandbox.on('husky.datagrid.' + datagridInstanceName + '.number.selections', function(number) {
-                var postfix = number > 0 ? 'enable' : 'disable';
-                this.sandbox.emit(
-                    'husky.toolbar.' + productAttributesInstanceName + '.item.' + postfix,
-                    'delete',
-                    false)
-            }, this);
+            this.sandbox.on(
+                'husky.datagrid.' + datagridInstanceName + '.number.selections',
+                onProductAttributeSelection.bind(this, productAttributesInstanceName)
+            );
         },
 
         /**
-         * @param {Boolean} saved defines if saved state should be shown
+         * Called when delete button is clicked.
+         */
+        onDeleteClicked = function() {
+            this.sandbox.emit('sulu.product.delete', this.options.data.id);
+        },
+
+        /**
+         * Enables or disables toolbar based on number of items that were selected.
+         *
+         * @param {Number} number
+         * @param {String} toolBarInstanceName
+         */
+        onProductAttributeSelection = function(number, toolBarInstanceName) {
+            var postfix = number > 0 ? 'enable' : 'disable';
+            this.sandbox.emit(
+                'husky.toolbar.' + toolBarInstanceName + '.item.' + postfix,
+                'delete',
+                false)
+        },
+
+        /**
+         * Callback, when product has been saved.
+         *
+         * @param {Object} data
+         */
+        onProductSaved = function(data) {
+            var attributes = data.attributes;
+
+            // Select action.
+            if (data.action === actions.ADD) {
+                // Add records in datagrid.
+                var attribute = _.findWhere(attributes, {'attributeId': data.attributeIdAdded});
+                this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.record.add', attribute);
+            } else if (data.action === actions.DELETE) {
+                // Delete records in datagrid.
+                $.each(data.attributeIdsDeleted, function(key, id) {
+                    this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.record.remove', id);
+                }.bind(this));
+            } else if (data.action === actions.UPDATE) {
+                // Update datagrid with received records.
+                this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.records.set', attributes);
+            }
+
+            setHeaderBar.call(this, true);
+            this.options.data.attributes.status = this.status;
+        },
+
+        /**
+         * Called when save button was clicked.
+         */
+        onSaveClicked = function() {
+            this.sendData = {};
+            this.sendData.status = this.status;
+            this.sendData.id = this.options.data.id;
+            save.call(this);
+        },
+
+        /**
+         * Called when product status has changed.
+         *
+         * @param {Object} status
+         */
+        onStatusChanged = function(status) {
+            if (!this.options.data
+                || !this.options.data.attributes.status
+                || this.options.data.attributes.status.id !== status.id
+            ) {
+                this.status = status;
+                this.options.data.attributes.status = this.status;
+                setHeaderBar.call(this, false);
+            }
+        },
+
+        /**
+         * @param {Boolean} saved Defines if saved state should be shown.
          */
         setHeaderBar = function(saved) {
             if (saved !== this.saved) {
@@ -101,7 +144,7 @@ define([
         },
 
         /**
-         * Create overlay content for add attribute overlay
+         * Create overlay content for add attribute overlay.
          */
         createAddOverlayContent = function() {
             attributeId = null;
@@ -116,10 +159,10 @@ define([
         },
 
         /**
-         * Create the overlay
+         * Create the overlay.
          */
         createAddOverlay = function() {
-            // call JSON to get the attributes from the server then create the overlay after it's done
+            // Call JSON to get the attributes from the server then create the overlay after it's done.
             var attributesUrl = 'api/attributes?locale=' + this.options.locale;
             var ajaxRequest = $.getJSON(attributesUrl, function(data) {
                 this.attributeTypes = [];
@@ -130,7 +173,7 @@ define([
                         'name': value.name
                     };
 
-                    // at this time we support only text type attributes
+                    // At this time we support only text type attributes.
                     if (value.type.name === typeText) {
                         this.attributeTypes.push(newAttribute);
                     }
@@ -138,11 +181,11 @@ define([
             }.bind(this));
 
             ajaxRequest.done(function() {
-                // create container for overlay
+                // Create container for overlay.
                 var $overlay = this.sandbox.dom.createElement('<div>');
                 this.sandbox.dom.append(this.$el, $overlay);
 
-                // create content
+                // Create content.
                 this.sandbox.start([
                     {
                         name: 'overlay@husky',
@@ -170,7 +213,7 @@ define([
 
                 var preSelectedElement = [];
 
-                // set pre selected element in checkbox
+                // Set pre selected element in checkbox.
                 if (this.attributeTypes.length > 0 &&
                     typeof(this.attributeTypes[0]) === "object" &&
                     typeof(this.attributeTypes[0].name) === "string"
@@ -179,7 +222,7 @@ define([
                     preSelectedElement.push(this.attributeTypes[0].name);
                 }
 
-                // create dropbox in overlay
+                // Create dropbox in overlay.
                 var selectOptions = {
                     el: '#selectBox',
                     instanceName: selectInstanceName,
@@ -192,14 +235,14 @@ define([
                 };
 
                 this.sandbox.start([
-                    // start select
+                    // Start select.
                     {
                         name: 'select@husky',
                         options: selectOptions
                     }
                 ]);
 
-                // define select event for dropbox
+                // Define select event for dropbox.
                 this.sandbox.on('husky.select.' + selectInstanceName + '.selected.item', function(item) {
                     attributeId = parseInt(item);
                 });
@@ -207,7 +250,7 @@ define([
         },
 
         /**
-         * save product attributes
+         * Save product attributes.
          */
         save = function() {
             this.saved = false;
@@ -215,7 +258,7 @@ define([
         },
 
         /**
-         * called when OK on overlay was clicked
+         * Called when OK on overlay was clicked.
          */
         overlayOkClicked = function() {
             // exit if no attribute is selected in overlay
@@ -253,7 +296,7 @@ define([
         },
 
         /**
-         * delete action function from toolbar
+         * Delete action function from toolbar.
          */
         attributeDelete = function() {
             this.sandbox.emit('husky.datagrid.' + datagridInstanceName + '.items.get-selected', function(ids) {
@@ -286,8 +329,7 @@ define([
          * @param {String} locale
          */
         onBadgeAttributeName = function(item, badge, locale) {
-            if (
-                item.attributeLocale
+            if (item.attributeLocale
                 && item.attributeLocale == item.fallbackLocale
                 && item.attributeLocale != locale
             ) {
@@ -307,8 +349,7 @@ define([
          * @param {String} locale
          */
         onBadgeAttributeValueName = function(item, badge, locale) {
-            if (
-                item.attributeValueLocale
+            if (item.attributeValueLocale
                 && item.attributeValueLocale == item.fallbackLocale
                 && item.attributeValueLocale != locale
             ) {
@@ -321,7 +362,7 @@ define([
         },
 
         /**
-         * calls basic form components
+         * Calls basic form components.
          */
         startFormComponents = function() {
             var datagridOptions = {
@@ -362,7 +403,7 @@ define([
             };
 
             this.sandbox.start([
-                // start datagrid
+                // Start datagrid.
                 {
                     name: 'datagrid@husky',
                     options: datagridOptions
@@ -373,7 +414,7 @@ define([
                 {
                     name: 'toolbar@husky',
                     options: {
-                        el: '#product-attribute-selection-toolbar',
+                        el: '#product-attribute-toolbar',
                         instanceName: productAttributesInstanceName,
                         small: false,
                         buttons: [
@@ -395,10 +436,82 @@ define([
         },
 
         /**
-         * initialize form components
+         * Starts toolbar and datagrid for managing variant attributes.
          */
-        initForm = function() {
-            this.sandbox.start(formSelector);
+        startVariantAttributeFormComponents = function() {
+            var datagridOptions = {
+                el: '#js-variant-attribute-list',
+                instanceName: datagridInstanceName,
+                idKey: 'attributeId',
+                resultKey: 'attributes',
+                matchings: '/admin/api/product-variant-attributes/fields?locale=' + this.options.locale,
+                // viewOptions: {
+                //     table: {
+                //         type: 'checkbox',
+                //         badges: [
+                //             {
+                //                 column: 'name',
+                //                 callback: function(item, badge) {
+                //                     return onBadgeAttributeName(item, badge, this.options.locale);
+                //                 }.bind(this)
+                //             }
+                //         ]
+                //     }
+                // },
+                url: '/admin/api/products/' + this.options.data.id + '/variant-attributes?locale=' + this.options.locale
+            };
+
+            this.sandbox.start([
+                // Start datagrid.
+                {
+                    name: 'datagrid@husky',
+                    options: datagridOptions
+                },
+                {
+                    name: 'toolbar@husky',
+                    options: {
+                        el: '#js-variant-attribute-toolbar',
+                        instanceName: productAttributesInstanceName,
+                        small: false,
+                        buttons: [
+                            {
+                                id: 'add',
+                                icon: 'plus-circle',
+                                callback: createAddOverlay.bind(this)
+                            },
+                            {
+                                id: 'delete',
+                                icon: 'trash-o',
+                                disabled: true,
+                                callback: attributeDelete.bind(this)
+                            }
+                        ]
+                    }
+                }
+            ]);
+        },
+
+        /**
+         * Initialize variant attributes components.
+         */
+        initVariantAttributesForm = function() {
+            var productType = this.options.data.attributes.type.id;
+
+            // If current product is a product with variants we also show product variants table.
+            if (productType !== ProductTypeManager.types.PRODUCT_WITH_VARIANTS) {
+                return;
+            }
+
+            // Show variant attributes container.
+            $(selectors.variantAttributesContainer).removeClass('is-hidden');
+
+            startVariantAttributeFormComponents.call(this);
+        },
+
+        /**
+         * Initialize product attributes components.
+         */
+        initProductAttributesForm = function() {
             startFormComponents.call(this);
         };
 
@@ -407,22 +520,40 @@ define([
 
         templates: ['/admin/product/template/product/attributes'],
 
-        render: function() {
-            this.sandbox.dom.html(this.$el, this.renderTemplate('/admin/product/template/product/attributes'));
-            initForm.call(this);
-        },
-
+        /**
+         * Constructor of component.
+         */
         initialize: function() {
             bindCustomEvents.call(this);
+
+            // Set correct status.
+            this.status = Config.get('product.status.inactive');
             if (!!this.options.data) {
                 this.status = this.options.data.attributes.status;
-            } else {
-                this.status = Config.get('product.status.inactive');
             }
-            // reset status if it has been changed before and has not been saved
+            // Reset status if it has been changed before and has not been saved.
             this.sandbox.emit('product.state.change', this.status);
+
             this.render();
             setHeaderBar.call(this, true);
+        },
+
+        /**
+         * Renders component.
+         */
+        render: function() {
+            this.sandbox.dom.html(
+                this.$el,
+                this.renderTemplate(
+                    '/admin/product/template/product/attributes',
+                    {
+                        'translate': this.sandbox.translate
+                    }
+                )
+            );
+
+            initProductAttributesForm.call(this);
+            initVariantAttributesForm.call(this);
         }
     };
 });

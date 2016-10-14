@@ -423,6 +423,11 @@
                 <source>sulu_product.types.product-variant</source>
                 <target>Variant</target>
             </trans-unit>
+            <!-- Attributes page -->
+            <trans-unit id="attributes-01" resname="sulu_product.variant-attributes">
+                <source>sulu_product.variant-attributes</source>
+                <target>Variant Attributes</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

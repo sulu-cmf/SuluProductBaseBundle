@@ -32,6 +32,7 @@ use Sulu\Bundle\ProductBundle\DataFixtures\ORM\Units\LoadUnits;
 use Sulu\Bundle\ProductBundle\Entity\Addon;
 use Sulu\Bundle\ProductBundle\Entity\AddonPrice;
 use Sulu\Bundle\ProductBundle\Entity\Attribute;
+use Sulu\Bundle\ProductBundle\Entity\AttributeTranslation;
 use Sulu\Bundle\ProductBundle\Entity\AttributeType;
 use Sulu\Bundle\ProductBundle\Entity\AttributeTypeRepository;
 use Sulu\Bundle\ProductBundle\Entity\AttributeValue;
@@ -173,6 +174,11 @@ class ProductTestData
      * @var AttributeType
      */
     private $attributeType;
+
+    /**
+     * @var int
+     */
+    private $attributeCount = 0;
 
     /**
      * @param Container $container
@@ -475,7 +481,7 @@ class ProductTestData
      */
     public function createProductAttribute(ProductInterface $product, $value, $locale = 'en')
     {
-        $attribute = $this->createAttribute();
+        $attribute = $this->createAttribute($locale);
 
         $productAttribute = new ProductAttribute();
         $this->entityManager->persist($productAttribute);
@@ -528,13 +534,22 @@ class ProductTestData
     /**
      * Creates a new Attribute.
      *
+     * @param string $locale
+     *
      * @return Attribute
      */
-    public function createAttribute()
+    public function createAttribute($locale = self::LOCALE)
     {
         $attribute = new Attribute();
         $this->entityManager->persist($attribute);
         $attributeType = $this->getAttributeTypeRepository()->find(self::ATTRIBUTE_TYPE_ID);
+
+        $attributeTranslation = new AttributeTranslation();
+        $this->entityManager->persist($attributeTranslation);
+        $attributeTranslation->setLocale($locale);
+        $attributeTranslation->setAttribute($attribute);
+        $attributeTranslation->setName(sprintf('attribute-translation-%s-%s', self::LOCALE, ++$this->attributeCount));
+
         $attribute->setType($attributeType);
         $attribute->setCreated(new DateTime());
         $attribute->setChanged(new DateTime());

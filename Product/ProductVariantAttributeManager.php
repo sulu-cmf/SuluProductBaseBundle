@@ -91,7 +91,8 @@ class ProductVariantAttributeManager
                 self::$attributeTranslationEntityName => new DoctrineJoinDescriptor(
                     self::$attributeTranslationEntityName,
                     static::$attributeEntityName . '.translations',
-                    self::$attributeTranslationEntityName . '.locale = \'' . $locale . '\''
+                    self::$attributeTranslationEntityName . '.locale = \'' . $locale . '\'',
+                    DoctrineJoinDescriptor::JOIN_METHOD_INNER
                 ),
             ],
             false,
@@ -118,7 +119,10 @@ class ProductVariantAttributeManager
         $variant = $this->retrieveProductById($productId);
         $attribute = $this->retrieveAttributeById($this->getProperty($requestData, 'attributeId'));
 
-        $variant->addVariantAttribute($attribute);
+        // Only add if relation does not already exists.
+        if (!$variant->getVariantAttributes()->contains($attribute)) {
+            $variant->addVariantAttribute($attribute);
+        }
 
         return $variant;
     }

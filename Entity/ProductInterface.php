@@ -11,7 +11,7 @@
 
 namespace Sulu\Bundle\ProductBundle\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Sulu\Bundle\CategoryBundle\Entity\Category;
 use Sulu\Bundle\ContactBundle\Entity\AccountInterface;
 use Sulu\Bundle\ContactBundle\Entity\Country;
@@ -249,7 +249,7 @@ interface ProductInterface
     /**
      * Get relations.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getRelations();
 
@@ -272,7 +272,7 @@ interface ProductInterface
     /**
      * Get upsells.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getUpsells();
 
@@ -295,7 +295,7 @@ interface ProductInterface
     /**
      * Get crosssells.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getCrosssells();
 
@@ -366,7 +366,7 @@ interface ProductInterface
     /**
      * Get children.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getChildren();
 
@@ -412,33 +412,33 @@ interface ProductInterface
     /**
      * Get attributes.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getProductAttributes();
 
     /**
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getVariantAttributes();
 
     /**
      * @param Attribute $attribute
      *
-     * @return self
+     * @return $this
      */
     public function addVariantAttribute(Attribute $attribute);
 
     /**
      * @param Attribute[] $attributes
      *
-     * @return self
+     * @return $this
      */
     public function addVariantAttributes(array $attributes);
 
     /**
      * @param Attribute $attribute
      *
-     * @return self
+     * @return $this
      */
     public function removeVariantAttribute(Attribute $attribute);
 
@@ -461,7 +461,7 @@ interface ProductInterface
     /**
      * Get translations.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getTranslations();
 
@@ -493,7 +493,7 @@ interface ProductInterface
     /**
      * Get extras.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getAddons();
 
@@ -516,7 +516,7 @@ interface ProductInterface
     /**
      * Get setProducts.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getSetProducts();
 
@@ -539,14 +539,14 @@ interface ProductInterface
     /**
      * Get categories.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getCategories();
 
     /**
      * Get media.
      *
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getMedia();
 
@@ -599,7 +599,7 @@ interface ProductInterface
     public function isValidShopProduct($defaultCurrency);
 
     /**
-     * @return ArrayCollection
+     * @return Collection
      */
     public function getTags();
 

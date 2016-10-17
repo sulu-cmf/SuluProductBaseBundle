@@ -14,8 +14,8 @@ namespace Sulu\Bundle\ProductBundle\Entity;
 use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
 /**
- * Entity repository for product types.
+ * Entity repository for attribute translations.
  */
-class TypeRepository extends EntityRepository
+class AttributeTranslationRepository extends EntityRepository
 {
 }

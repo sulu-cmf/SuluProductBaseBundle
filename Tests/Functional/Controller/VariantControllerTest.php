@@ -251,7 +251,7 @@ class VariantControllerTest extends SuluTestCase
 
         $requiredAttributes = ['locale'];
 
-        $this->checkValidationErrorAttributes($response, $requiredAttributes);
+        $this->assertValidationErrorAttributes($response, $requiredAttributes);
     }
 
     /**
@@ -288,7 +288,7 @@ class VariantControllerTest extends SuluTestCase
 
         $requiredAttributes = ['locale', 'name', 'number', 'prices', 'attributes'];
 
-        $this->checkValidationErrorAttributes($response, $requiredAttributes);
+        $this->assertValidationErrorAttributes($response, $requiredAttributes);
     }
 
     /**
@@ -310,7 +310,7 @@ class VariantControllerTest extends SuluTestCase
         $this->assertEquals('1234', $response['number']);
         $this->assertEquals($this->product->getId(), $response['parent']['id']);
 
-        $this->checkAttributes($attributes, $response);
+        $this->assertAttributes($attributes, $response);
 
         $this->checkPrices($prices, $response);
 
@@ -345,8 +345,7 @@ class VariantControllerTest extends SuluTestCase
     {
         $this->client->request(
             'PUT',
-            '/api/products/' . $this->product->getId() . '/variants/' . $this->productVariants[0]->getId(),
-            []
+            '/api/products/' . $this->product->getId() . '/variants/' . $this->productVariants[0]->getId()
         );
 
         $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
@@ -355,7 +354,7 @@ class VariantControllerTest extends SuluTestCase
 
         $requiredAttributes = ['locale', 'name', 'number', 'prices', 'attributes'];
 
-        $this->checkValidationErrorAttributes($response, $requiredAttributes);
+        $this->assertValidationErrorAttributes($response, $requiredAttributes);
     }
 
     /**
@@ -399,7 +398,7 @@ class VariantControllerTest extends SuluTestCase
         $this->assertEquals('Not so new kid anymore', $response['name']);
         $this->assertEquals('4321', $response['number']);
 
-        $this->checkAttributes($attributes, $response);
+        $this->assertAttributes($attributes, $response);
         $this->checkPrices($prices, $response);
 
         return $this->client->getResponse();
@@ -494,7 +493,7 @@ class VariantControllerTest extends SuluTestCase
      * @param array $attributes
      * @param array $response
      */
-    private function checkAttributes(array $attributes, array $response)
+    private function assertAttributes(array $attributes, array $response)
     {
         // Check attributes.
         $this->assertCount(count($attributes), $response['attributes']);
@@ -568,7 +567,7 @@ class VariantControllerTest extends SuluTestCase
      * @param array $validationResponse
      * @param array $requiredAttributes
      */
-    private function checkValidationErrorAttributes(array $validationResponse, array $requiredAttributes)
+    private function assertValidationErrorAttributes(array $validationResponse, array $requiredAttributes)
     {
         $this->assertCount(count($requiredAttributes), $validationResponse);
 

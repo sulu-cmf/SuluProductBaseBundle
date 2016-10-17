@@ -14,6 +14,9 @@ e.g.
 ```
 [
   'PRODUCT' => 1,
+  'PRODUCT_WITH_VARIANTS' => 2,
+  'PRODUCT_ADDON' => 3,
+  'PRODUCT_SET' => 4,
   'PRODUCT_VARIANT' => 5,
 ]
 ```

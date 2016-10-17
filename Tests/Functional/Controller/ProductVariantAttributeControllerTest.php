@@ -82,18 +82,18 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
         $this->productTestData = new ProductTestData($this->getContainer(), true);
 
         $product = $this->productTestData->getProduct();
-        $attribute1 = $this->productTestData->createAttribute();
-        $attribute2 = $this->productTestData->createAttribute();
+        $attribute1 = $this->productTestData->createAttribute(self::REQUEST_LOCALE);
+        $attribute2 = $this->productTestData->createAttribute(self::REQUEST_LOCALE);
 
         $product->addVariantAttribute($attribute1);
         $product->addVariantAttribute($attribute2);
 
         // Add variantAttributes to another product to make test environment more complex.
         $product2 = $this->productTestData->getProduct2();
-        $product2->addVariantAttribute($this->productTestData->createAttribute());
+        $product2->addVariantAttribute($this->productTestData->createAttribute(self::REQUEST_LOCALE));
 
         $this->product = $this->productTestData->createProduct();
-        $this->attribute = $this->productTestData->createAttribute();
+        $this->attribute = $this->productTestData->createAttribute(self::REQUEST_LOCALE);
 
         $this->entityManager->flush();
     }
@@ -140,10 +140,55 @@ class ProductVariantAttributeControllerTest extends SuluTestCase
     }
 
     /**
+     * Test cGET on a product that has no variant attributes assigned.
+     */
+    public function testGetEmptyResult()
+    {
+        // Product has no variant-attributes assigned, so the result is expected to be empty.
+        $this->client->request(
+            'GET',
+            $this->getBasePath($this->product->getId()) . '?locale=' . static::REQUEST_LOCALE
+        );
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $attributes = $response['_embedded']['variantAttributes'];
+        $this->assertCount(0, $attributes);
+    }
+
+    /**
      * Test POST to create a new variant-attribute relation.
      */
     public function testPost()
     {
+        $this->client->request(
+            'POST',
+            $this->getBasePath($this->product->getId()),
+            [
+                'attributeId' => $this->attribute->getId(),
+            ]
+        );
+        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+
+        $this->client->request(
+            'GET',
+            $this->getBasePath($this->product->getId()) . '?locale=' . static::REQUEST_LOCALE
+        );
+
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $attributes = $response['_embedded']['variantAttributes'];
+        $this->assertCount(1, $attributes);
+        $this->assertEquals($this->attribute->getId(), $attributes[0]['id']);
+    }
+
+    /**
+     * Test POST with an already assigned variant attribute.
+     */
+    public function testPostExisting()
+    {
+        $this->product->addVariantAttribute($this->attribute);
+        $this->entityManager->flush();
+
         $this->client->request(
             'POST',
             $this->getBasePath($this->product->getId()),

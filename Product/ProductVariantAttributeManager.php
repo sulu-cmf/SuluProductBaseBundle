@@ -16,16 +16,16 @@ use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Bundle\ProductBundle\Product\Exception\AttributeNotFoundException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
-use Sulu\Bundle\ProductBundle\Traits\UtilitiesTrait;
+use Sulu\Bundle\ProductBundle\Traits\ArrayDataTrait;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescriptor;
 
 /**
- * Manager responsible for handling product attributes.
+ * This manager is responsible for handling product attributes.
  */
 class ProductVariantAttributeManager
 {
-    use UtilitiesTrait;
+    use ArrayDataTrait;
 
     private static $attributeEntityName = 'SuluProductBundle:Attribute';
     private static $attributeTranslationEntityName = 'SuluProductBundle:AttributeTranslation';
@@ -55,6 +55,8 @@ class ProductVariantAttributeManager
 
     /**
      * Returns all field-descriptors for variant attributes.
+     *
+     * @param string $locale
      *
      * @return DoctrineFieldDescriptor[]
      */

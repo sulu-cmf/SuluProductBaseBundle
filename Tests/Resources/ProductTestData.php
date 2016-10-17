@@ -32,7 +32,6 @@ use Sulu\Bundle\ProductBundle\DataFixtures\ORM\Units\LoadUnits;
 use Sulu\Bundle\ProductBundle\Entity\Addon;
 use Sulu\Bundle\ProductBundle\Entity\AddonPrice;
 use Sulu\Bundle\ProductBundle\Entity\Attribute;
-use Sulu\Bundle\ProductBundle\Entity\AttributeTranslation;
 use Sulu\Bundle\ProductBundle\Entity\AttributeType;
 use Sulu\Bundle\ProductBundle\Entity\AttributeTypeRepository;
 use Sulu\Bundle\ProductBundle\Entity\AttributeValue;
@@ -540,11 +539,11 @@ class ProductTestData
      */
     public function createAttribute($locale = self::LOCALE)
     {
-        $attribute = new Attribute();
+        $attribute = $this->getAttributeRepository()->createNew();
         $this->entityManager->persist($attribute);
         $attributeType = $this->getAttributeTypeRepository()->find(self::ATTRIBUTE_TYPE_ID);
 
-        $attributeTranslation = new AttributeTranslation();
+        $attributeTranslation = $this->getAttributeTranslationRepository()->createNew();
         $this->entityManager->persist($attributeTranslation);
         $attributeTranslation->setLocale($locale);
         $attributeTranslation->setAttribute($attribute);
@@ -720,9 +719,25 @@ class ProductTestData
     /**
      * @return AttributeTypeRepository
      */
+    protected function getAttributeRepository()
+    {
+        return $this->container->get('sulu_product.attribute_repository');
+    }
+
+    /**
+     * @return AttributeTypeRepository
+     */
     protected function getAttributeTypeRepository()
     {
         return $this->container->get('sulu_product.attribute_type_repository');
+    }
+
+    /**
+     * @return AttributeTypeRepository
+     */
+    protected function getAttributeTranslationRepository()
+    {
+        return $this->container->get('sulu_product.attribute_translation_repository');
     }
 
     /**

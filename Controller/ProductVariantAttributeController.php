@@ -15,14 +15,9 @@ use FOS\RestBundle\Controller\Annotations\Delete;
 use FOS\RestBundle\Controller\Annotations\Get;
 use FOS\RestBundle\Controller\Annotations\Post;
 use FOS\RestBundle\Routing\ClassResourceInterface;
-use Sulu\Bundle\ProductBundle\Product\Exception\AttributeNotFoundException;
-use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
-use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
-use Sulu\Bundle\ProductBundle\Product\ProductFactoryInterface;
 use Sulu\Bundle\ProductBundle\Product\ProductLocaleManager;
 use Sulu\Bundle\ProductBundle\Product\ProductManagerInterface;
 use Sulu\Bundle\ProductBundle\Product\ProductVariantAttributeManager;
-use Sulu\Component\Rest\Exception\EntityNotFoundException;
 use Sulu\Component\Rest\ListBuilder\Doctrine\DoctrineListBuilderFactory;
 use Sulu\Component\Rest\ListBuilder\ListRepresentation;
 use Sulu\Component\Rest\RestController;
@@ -31,6 +26,9 @@ use Sulu\Component\Security\SecuredControllerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * This controller makes adding and removing of product variants accessible through a REST API.
+ */
 class ProductVariantAttributeController extends RestController implements ClassResourceInterface, SecuredControllerInterface
 {
     protected static $productEntityName = 'SuluProductBundle:Product';
@@ -80,7 +78,7 @@ class ProductVariantAttributeController extends RestController implements ClassR
     {
         $locale = $this->getProductLocaleManager()->retrieveLocale($this->getUser(), $request->get('locale'));
 
-        $list = $this->getListRepresentation($request, $locale, $productId);
+        $list = $this->createListRepresentation($request, $locale, $productId);
 
         $view = $this->view($list, Response::HTTP_OK);
 
@@ -99,22 +97,14 @@ class ProductVariantAttributeController extends RestController implements ClassR
      */
     public function postAction(Request $request, $productId)
     {
-        try {
-            $this->getVariantAttributeManager()->createVariantAttributeRelation(
-                $productId,
-                $request->request->all()
-            );
+        $this->getVariantAttributeManager()->createVariantAttributeRelation(
+            $productId,
+            $request->request->all()
+        );
 
-            $this->getDoctrine()->getEntityManager()->flush();
+        $this->getDoctrine()->getEntityManager()->flush();
 
-            $view = $this->view([], Response::HTTP_NO_CONTENT);
-        } catch (AttributeNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), Response::HTTP_BAD_REQUEST);
-        } catch (ProductNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), Response::HTTP_BAD_REQUEST);
-        }
+        $view = $this->view([], Response::HTTP_NO_CONTENT);
 
         return $this->handleView($view);
     }
@@ -131,24 +121,14 @@ class ProductVariantAttributeController extends RestController implements ClassR
      */
     public function deleteAction($productId, $attributeId)
     {
-        try {
-            $this->getVariantAttributeManager()->removeVariantAttributeRelation(
-                $productId,
-                $attributeId
-            );
+        $this->getVariantAttributeManager()->removeVariantAttributeRelation(
+            $productId,
+            $attributeId
+        );
 
-            $this->getDoctrine()->getEntityManager()->flush();
+        $this->getDoctrine()->getEntityManager()->flush();
 
-            $view = $this->view(null, Response::HTTP_NO_CONTENT);
-        } catch (AttributeNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), Response::HTTP_BAD_REQUEST);
-        } catch (ProductNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), Response::HTTP_BAD_REQUEST);
-        } catch (ProductException $exc) {
-            $view = $this->view($exc->getMessage(), Response::HTTP_BAD_REQUEST);
-        }
+        $view = $this->view(null, Response::HTTP_NO_CONTENT);
 
         return $this->handleView($view);
     }
@@ -162,7 +142,7 @@ class ProductVariantAttributeController extends RestController implements ClassR
      *
      * @return ListRepresentation
      */
-    private function getListRepresentation($request, $locale, $productId)
+    private function createListRepresentation($request, $locale, $productId)
     {
         /** @var RestHelperInterface $restHelper */
         $restHelper = $this->get('sulu_core.doctrine_rest_helper');
@@ -177,7 +157,7 @@ class ProductVariantAttributeController extends RestController implements ClassR
             $this->getVariantAttributeManager()->retrieveFieldDescriptors($locale)
         );
 
-        // Get all variant-attributes for product.
+        // Get all variant-attributes for a certain product-id.
         $listBuilder->where(
             $this->getProductManager()->getFieldDescriptors($locale)['id'],
             $productId
@@ -218,13 +198,5 @@ class ProductVariantAttributeController extends RestController implements ClassR
     private function getVariantAttributeManager()
     {
         return $this->get('sulu_product.product_variant_attribute_manager');
-    }
-
-    /**
-     * @return ProductFactoryInterface
-     */
-    private function getProductFactory()
-    {
-        return $this->getContainer()->get('sulu_product.product_factory');
     }
 }

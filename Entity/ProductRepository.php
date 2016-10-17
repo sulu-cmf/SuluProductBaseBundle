@@ -11,9 +11,9 @@
 
 namespace Sulu\Bundle\ProductBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
 use Sulu\Bundle\ProductBundle\Product\ProductRepositoryInterface;
+use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
 /**
  * Entity repository for products.

@@ -11,9 +11,9 @@
 
 namespace Sulu\Bundle\ProductBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
 use Sulu\Bundle\ProductBundle\Product\AttributeValueRepositoryInterface;
+use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
 class AttributeValueRepository extends EntityRepository implements AttributeValueRepositoryInterface
 {

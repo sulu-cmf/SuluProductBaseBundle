@@ -14,12 +14,15 @@ namespace Sulu\Bundle\ProductBundle\Product;
 use Doctrine\Common\Persistence\ObjectManager;
 use Sulu\Bundle\ProductBundle\Entity\Attribute;
 use Sulu\Bundle\ProductBundle\Entity\AttributeValue;
+use Sulu\Bundle\ProductBundle\Entity\AttributeValueRepository;
 use Sulu\Bundle\ProductBundle\Entity\AttributeValueTranslation;
+use Sulu\Bundle\ProductBundle\Entity\AttributeValueTranslationRepository;
 use Sulu\Bundle\ProductBundle\Entity\ProductAttribute;
+use Sulu\Bundle\ProductBundle\Entity\ProductAttributeRepository;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 
 /**
- * Manager responsible for handling product attributes.
+ * This manager is responsible for handling product attributes.
  */
 class ProductAttributeManager
 {
@@ -29,12 +32,36 @@ class ProductAttributeManager
     private $entityManager;
 
     /**
+     * @var ProductAttributeRepository
+     */
+    private $productAttributeRepository;
+
+    /**
+     * @var AttributeValueRepository
+     */
+    private $attributeValueRepository;
+
+    /**
+     * @var AttributeValueTranslationRepository
+     */
+    private $attributeValueTranslationRepository;
+
+    /**
      * @param ObjectManager $entityManager
+     * @param ProductAttributeRepository $productAttributeRepository
+     * @param AttributeValueRepository $attributeValueRepository
+     * @param AttributeValueTranslationRepository $attributeValueTranslationRepository
      */
     public function __construct(
-        ObjectManager $entityManager
+        ObjectManager $entityManager,
+        ProductAttributeRepository $productAttributeRepository,
+        AttributeValueRepository $attributeValueRepository,
+        AttributeValueTranslationRepository $attributeValueTranslationRepository
     ) {
         $this->entityManager = $entityManager;
+        $this->productAttributeRepository = $productAttributeRepository;
+        $this->attributeValueRepository = $attributeValueRepository;
+        $this->attributeValueTranslationRepository = $attributeValueTranslationRepository;
     }
 
     /**
@@ -51,7 +78,7 @@ class ProductAttributeManager
         ProductInterface $product,
         AttributeValue $attributeValue
     ) {
-        $productAttribute = new ProductAttribute();
+        $productAttribute = $this->productAttributeRepository->createNew();
         $productAttribute->setAttribute($attribute);
         $productAttribute->setProduct($product);
         $productAttribute->setAttributeValue($attributeValue);
@@ -73,7 +100,7 @@ class ProductAttributeManager
      */
     public function createAttributeValue(Attribute $attribute, $value, $locale)
     {
-        $attributeValue = new AttributeValue();
+        $attributeValue = $this->attributeValueRepository->createNew();
         $attributeValue->setAttribute($attribute);
         $this->entityManager->persist($attributeValue);
         $attribute->addValue($attributeValue);
@@ -103,7 +130,7 @@ class ProductAttributeManager
         }
         if (!$attributeValueTranslation) {
             // Create a new attribute value translation.
-            $attributeValueTranslation = new AttributeValueTranslation();
+            $attributeValueTranslation = $this->attributeValueTranslationRepository->createNew();
             $this->entityManager->persist($attributeValueTranslation);
             $attributeValueTranslation->setLocale($locale);
             $attributeValueTranslation->setAttributeValue($attributeValue);
@@ -165,25 +192,28 @@ class ProductAttributeManager
             $attribute
         );
 
+        // If product-attribute already exists we just need to update the translation.
         if ($existingProductAttribute) {
             $this->setOrCreateAttributeValueTranslation(
                 $existingProductAttribute->getAttributeValue(),
                 $attributeData['attributeValueName'],
                 $locale
             );
-        } else {
-            // Create new AttributeValue and ProductAttribute.
-            $attributeValue = $this->createAttributeValue(
-                $attribute,
-                $attributeData['attributeValueName'],
-                $locale
-            );
-            $this->createProductAttribute(
-                $attribute,
-                $product,
-                $attributeValue
-            );
+
+            return;
         }
+
+        // Create new AttributeValue and ProductAttribute.
+        $attributeValue = $this->createAttributeValue(
+            $attribute,
+            $attributeData['attributeValueName'],
+            $locale
+        );
+        $this->createProductAttribute(
+            $attribute,
+            $product,
+            $attributeValue
+        );
     }
 
     /**

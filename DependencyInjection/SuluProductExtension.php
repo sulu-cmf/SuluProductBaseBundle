@@ -69,6 +69,19 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
                 ]
             );
         }
+        if ($container->hasExtension('fos_rest')) {
+            $container->prependExtensionConfig(
+                'fos_rest',
+                [
+                    'exception' => [
+                        'codes' => [
+                            'Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException' => 400,
+                            'Sulu\Bundle\ProductBundle\Product\Exception\ProductException' => 400,
+                        ],
+                    ],
+                ]
+            );
+        }
     }
 
     /**
@@ -80,7 +93,6 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
     private function retrieveProductTypesMap()
     {
         $productTypeMap = [];
-
         LoadProductTypes::processProductTypesFixtures(
             function (\DOMElement $element) use (&$productTypeMap) {
                 $productTypeMap[$element->getAttribute('key')] = $element->getAttribute('id');

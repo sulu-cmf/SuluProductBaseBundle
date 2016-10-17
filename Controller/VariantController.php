@@ -15,11 +15,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use Hateoas\Representation\CollectionRepresentation;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
-use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
 use Sulu\Bundle\ProductBundle\Product\ProductFactoryInterface;
 use Sulu\Bundle\ProductBundle\Product\ProductManagerInterface;
 use Sulu\Bundle\ProductBundle\Product\ProductVariantManagerInterface;
-use Sulu\Component\Rest\Exception\EntityNotFoundException;
 use Sulu\Component\Rest\ListBuilder\Doctrine\DoctrineListBuilderFactory;
 use Sulu\Component\Rest\ListBuilder\ListRepresentation;
 use Sulu\Component\Rest\RestController;
@@ -137,25 +135,18 @@ class VariantController extends RestController implements ClassResourceInterface
         $userId = $this->getUser()->getId();
         $locale = $this->getLocale($request);
 
-        try {
-            $variant = $this->getProductVariantManager()->createVariant(
-                $parentId,
-                $requestData,
-                $locale,
-                $userId
-            );
+        $variant = $this->getProductVariantManager()->createVariant(
+            $parentId,
+            $requestData,
+            $locale,
+            $userId
+        );
 
-            $this->getEntityManager()->flush();
+        $this->getEntityManager()->flush();
 
-            $apiVariant = $this->getProductFactory()->createApiEntity($variant, $locale);
+        $apiVariant = $this->getProductFactory()->createApiEntity($variant, $locale);
 
-            $view = $this->view($apiVariant, 200);
-        } catch (ProductNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), 400);
-        } catch (ProductException $exc) {
-            $view = $this->view($exc->getMessage(), 400);
-        }
+        $view = $this->view($apiVariant, 200);
 
         return $this->handleView($view);
     }
@@ -167,6 +158,8 @@ class VariantController extends RestController implements ClassResourceInterface
      * @param int $parentId
      * @param int $variantId
      *
+     * @throws ProductException
+     *
      * @return Response
      */
     public function putAction(Request $request, $parentId, $variantId)
@@ -175,29 +168,22 @@ class VariantController extends RestController implements ClassResourceInterface
         $userId = $this->getUser()->getId();
         $locale = $this->getLocale($request);
 
-        try {
-            $variant = $this->getProductVariantManager()->updateVariant(
-                $variantId,
-                $requestData,
-                $locale,
-                $userId
-            );
+        $variant = $this->getProductVariantManager()->updateVariant(
+            $variantId,
+            $requestData,
+            $locale,
+            $userId
+        );
 
-            if ($variant->getParent()->getId() !== (int) $parentId) {
-                throw new ProductException('Variant does not exists for given product.');
-            }
-
-            $this->getEntityManager()->flush();
-
-            $apiVariant = $this->getProductFactory()->createApiEntity($variant, $locale);
-
-            $view = $this->view($apiVariant, 200);
-        } catch (ProductNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), 400);
-        } catch (ProductException $exc) {
-            $view = $this->view($exc->getMessage(), 400);
+        if ($variant->getParent()->getId() !== (int)$parentId) {
+            throw new ProductException('Variant does not exists for given product.');
         }
+
+        $this->getEntityManager()->flush();
+
+        $apiVariant = $this->getProductFactory()->createApiEntity($variant, $locale);
+
+        $view = $this->view($apiVariant, 200);
 
         return $this->handleView($view);
     }
@@ -208,25 +194,20 @@ class VariantController extends RestController implements ClassResourceInterface
      * @param int $parentId
      * @param int $variantId
      *
+     * @throws ProductException
+     *
      * @return Response
      */
     public function deleteAction($parentId, $variantId)
     {
-        try {
-            $variant = $this->getProductVariantManager()->deleteVariant($variantId);
+        $variant = $this->getProductVariantManager()->deleteVariant($variantId);
 
-            if ($variant->getParent()->getId() !== (int) $parentId) {
-                throw new ProductException('Variant does not exists for given product.');
-            }
-            $this->getEntityManager()->flush();
-
-            $view = $this->view(null, 204);
-        } catch (ProductNotFoundException $exc) {
-            $exception = new EntityNotFoundException($exc->getEntityName(), $exc->getId());
-            $view = $this->view($exception->toArray(), 404);
-        } catch (ProductException $exc) {
-            $view = $this->view($exc->getMessage(), 400);
+        if ($variant->getParent()->getId() !== (int)$parentId) {
+            throw new ProductException('Variant does not exists for given product.');
         }
+        $this->getEntityManager()->flush();
+
+        $view = $this->view(null, 204);
 
         return $this->handleView($view);
     }

@@ -11,7 +11,7 @@
 
 namespace Sulu\Bundle\ProductBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
+use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
 class AttributeSetRepository extends EntityRepository
 {

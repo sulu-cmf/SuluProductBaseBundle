@@ -178,6 +178,8 @@ class ProductVariantManager implements ProductVariantManagerInterface
     }
 
     /**
+     * Maps all the data to a given variant for the given locale.
+     *
      * @param ProductInterface $variant
      * @param array $variantData
      * @param string $locale
@@ -263,18 +265,7 @@ class ProductVariantManager implements ProductVariantManagerInterface
 
         $currentPrices = iterator_to_array($variant->getPrices());
         foreach ($variantData['prices'] as $price) {
-            $matchingEntity = null;
-
-            // Try to find existing price.
-            /** @var ProductPrice $currentPrice */
-            foreach ($currentPrices as $index => $currentPrice) {
-                if ($price['currency']['id'] === $currentPrice->getCurrency()->getId()) {
-                    $matchingEntity = $currentPrice;
-                    unset($currentPrices[$index]);
-
-                    break;
-                }
-            }
+            $matchingEntity = $this->retrievePriceByCurrency($currentPrices, $price['currency']['id']);
 
             // Create new price if no match was found.
             if (!$matchingEntity) {
@@ -294,6 +285,29 @@ class ProductVariantManager implements ProductVariantManagerInterface
         foreach ($currentPrices as $price) {
             $this->entityManager->remove($price);
         }
+    }
+
+    /**
+     * Returns price by currency id. If found, the ProductPrice entity is removed
+     * from the prices array.
+     *
+     * @param ProductPrice[] $prices
+     * @param $currencyId
+     *
+     * @return null|ProductPrice
+     */
+    private function retrievePriceByCurrency(array &$prices, $currencyId)
+    {
+        /** @var ProductPrice $price */
+        foreach ($prices as $index => $price) {
+            if ($currencyId === $price->getCurrency()->getId()) {
+                unset($prices[$index]);
+
+                return $price;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -28,10 +28,10 @@ trait UtilitiesTrait
      */
     public function getProperty(array $data, $key, $default = null)
     {
-        if (array_key_exists($key, $data)) {
-            return $data[$key];
+        if (!array_key_exists($key, $data)) {
+            return $default;
         }
 
-        return $default;
+        return $data[$key];
     }
 }

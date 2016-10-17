@@ -14,7 +14,7 @@ namespace Sulu\Bundle\ProductBundle\Traits;
 /**
  * This Trait provides basic convenience helper functions.
  */
-trait UtilitiesTrait
+trait ArrayDataTrait
 {
     /**
      * Returns the value for a given key or if not existent

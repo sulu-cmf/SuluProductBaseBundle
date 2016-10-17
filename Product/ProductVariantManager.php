@@ -18,7 +18,7 @@ use Sulu\Bundle\ProductBundle\Entity\Type;
 use Sulu\Bundle\ProductBundle\Entity\TypeRepository;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
 use Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException;
-use Sulu\Bundle\ProductBundle\Traits\UtilitiesTrait;
+use Sulu\Bundle\ProductBundle\Traits\ArrayDataTrait;
 use Sulu\Component\Security\Authentication\UserInterface;
 use Sulu\Component\Security\Authentication\UserRepositoryInterface;
 
@@ -27,7 +27,7 @@ use Sulu\Component\Security\Authentication\UserRepositoryInterface;
  */
 class ProductVariantManager implements ProductVariantManagerInterface
 {
-    use UtilitiesTrait;
+    use ArrayDataTrait;
 
     /**
      * @var ProductManagerInterface

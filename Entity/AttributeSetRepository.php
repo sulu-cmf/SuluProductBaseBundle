@@ -13,6 +13,9 @@ namespace Sulu\Bundle\ProductBundle\Entity;
 
 use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
+/**
+ * Entity repository for attribute-sets.
+ */
 class AttributeSetRepository extends EntityRepository
 {
 }

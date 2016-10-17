@@ -13,6 +13,9 @@ namespace Sulu\Bundle\ProductBundle\Entity;
 
 use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
+/**
+ * Entity repository for product types.
+ */
 class TypeRepository extends EntityRepository
 {
 }

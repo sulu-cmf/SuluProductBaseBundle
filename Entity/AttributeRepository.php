@@ -15,6 +15,9 @@ use Doctrine\ORM\NoResultException;
 use Sulu\Bundle\ProductBundle\Product\AttributeRepositoryInterface;
 use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
+/**
+ * Entity repository for attributes.
+ */
 class AttributeRepository extends EntityRepository implements AttributeRepositoryInterface
 {
     /**

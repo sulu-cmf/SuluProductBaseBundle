@@ -175,7 +175,7 @@ class VariantController extends RestController implements ClassResourceInterface
             $userId
         );
 
-        if ($variant->getParent()->getId() !== (int)$parentId) {
+        if ($variant->getParent()->getId() !== (int) $parentId) {
             throw new ProductException('Variant does not exists for given product.');
         }
 
@@ -202,7 +202,7 @@ class VariantController extends RestController implements ClassResourceInterface
     {
         $variant = $this->getProductVariantManager()->deleteVariant($variantId);
 
-        if ($variant->getParent()->getId() !== (int)$parentId) {
+        if ($variant->getParent()->getId() !== (int) $parentId) {
             throw new ProductException('Variant does not exists for given product.');
         }
         $this->getEntityManager()->flush();

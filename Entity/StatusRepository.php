@@ -14,6 +14,9 @@ namespace Sulu\Bundle\ProductBundle\Entity;
 use Doctrine\ORM\NoResultException;
 use Sulu\Component\Persistence\Repository\ORM\EntityRepository;
 
+/**
+ * Entity repository for statuses.
+ */
 class StatusRepository extends EntityRepository
 {
     /**

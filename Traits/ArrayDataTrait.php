@@ -14,7 +14,7 @@ namespace Sulu\Bundle\ProductBundle\Traits;
 /**
  * This Trait provides basic convenience helper functions.
  */
-trait UtilitiesTrait
+trait ArrayDataTrait
 {
     /**
      * Returns the value for a given key or if not existent
@@ -28,10 +28,10 @@ trait UtilitiesTrait
      */
     public function getProperty(array $data, $key, $default = null)
     {
-        if (array_key_exists($key, $data)) {
-            return $data[$key];
+        if (!array_key_exists($key, $data)) {
+            return $default;
         }
 
-        return $default;
+        return $data[$key];
     }
 }

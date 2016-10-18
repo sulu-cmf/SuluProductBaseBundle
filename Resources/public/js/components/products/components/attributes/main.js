@@ -615,28 +615,35 @@ define([
                     name: 'datagrid@husky',
                     options: datagridOptions
                 },
-                {
-                    name: 'toolbar@husky',
-                    options: {
-                        el: '#js-variant-attribute-toolbar',
-                        instanceName: constants.variantAttributesToolbarInstanceName,
-                        small: false,
-                        buttons: [
-                            {
-                                id: 'add',
-                                icon: 'plus-circle',
-                                callback: onAddVariantAttributeClicked.bind(this)
-                            },
-                            {
-                                id: 'delete',
-                                icon: 'trash-o',
-                                disabled: true,
-                                callback: onDeleteVariantAttributeClicked.bind(this)
-                            }
-                        ]
-                    }
-                }
+
             ]);
+
+            // Only show toolbar if no variants have been added yet.
+            if (this.options.data.attributes.numberOfVariants === 0) {
+                this.sandbox.start([
+                    {
+                        name: 'toolbar@husky',
+                        options: {
+                            el: '#js-variant-attribute-toolbar',
+                            instanceName: constants.variantAttributesToolbarInstanceName,
+                            small: false,
+                            buttons: [
+                                {
+                                    id: 'add',
+                                    icon: 'plus-circle',
+                                    callback: onAddVariantAttributeClicked.bind(this)
+                                },
+                                {
+                                    id: 'delete',
+                                    icon: 'trash-o',
+                                    disabled: true,
+                                    callback: onDeleteVariantAttributeClicked.bind(this)
+                                }
+                            ]
+                        }
+                    }
+                ]);
+            }
         },
 
         /**

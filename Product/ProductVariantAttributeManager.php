@@ -84,7 +84,7 @@ class ProductVariantAttributeManager
             'name',
             'name',
             self::$attributeTranslationEntityName,
-            null,
+            'public.name',
             [
                 self::$attributeEntityName => new DoctrineJoinDescriptor(
                     self::$attributeEntityName,

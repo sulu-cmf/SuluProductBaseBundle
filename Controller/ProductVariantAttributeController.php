@@ -32,7 +32,6 @@ use Symfony\Component\HttpFoundation\Response;
 class ProductVariantAttributeController extends RestController implements ClassResourceInterface, SecuredControllerInterface
 {
     protected static $productEntityName = 'SuluProductBundle:Product';
-    protected static $attributeEntityName = 'SuluProductBundle:Attribute';
 
     protected static $entityKey = 'variantAttributes';
 

@@ -67,11 +67,11 @@ class ProductVariantAttributeManager
         $fieldDescriptors['id'] = new DoctrineFieldDescriptor(
             'id',
             'id',
-            self::$attributeEntityName,
+            static::$attributeEntityName,
             null,
             [
-                self::$attributeEntityName => new DoctrineJoinDescriptor(
-                    self::$attributeEntityName,
+                static::$attributeEntityName => new DoctrineJoinDescriptor(
+                    static::$attributeEntityName,
                     static::$productEntityName . '.variantAttributes'
                 ),
             ],
@@ -83,17 +83,17 @@ class ProductVariantAttributeManager
         $fieldDescriptors['name'] = new DoctrineFieldDescriptor(
             'name',
             'name',
-            self::$attributeTranslationEntityName,
+            static::$attributeTranslationEntityName,
             null,
             [
-                self::$attributeEntityName => new DoctrineJoinDescriptor(
-                    self::$attributeEntityName,
+                static::$attributeEntityName => new DoctrineJoinDescriptor(
+                    static::$attributeEntityName,
                     static::$productEntityName . '.variantAttributes'
                 ),
-                self::$attributeTranslationEntityName => new DoctrineJoinDescriptor(
-                    self::$attributeTranslationEntityName,
+                static::$attributeTranslationEntityName => new DoctrineJoinDescriptor(
+                    static::$attributeTranslationEntityName,
                     static::$attributeEntityName . '.translations',
-                    self::$attributeTranslationEntityName . '.locale = \'' . $locale . '\'',
+                    static::$attributeTranslationEntityName . '.locale = \'' . $locale . '\'',
                     DoctrineJoinDescriptor::JOIN_METHOD_INNER
                 ),
             ],

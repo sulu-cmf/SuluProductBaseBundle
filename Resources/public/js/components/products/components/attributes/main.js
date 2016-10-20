@@ -588,12 +588,30 @@ define([
          */
         onAddVariantAttributeClicked = function() {
             fetchAttributesForSelect.call(this).done(function(selectData) {
+                // Get all Attributes that already have been added.
+                var alreadyAddedAttributeIds = [];
+                this.sandbox.emit(
+                    'husky.datagrid.' + constants.variantAttributesDatagridInstanceName + '.records.get',
+                    function(data) {
+                        alreadyAddedAttributeIds = data.map(function(attribute) {
+                            return attribute.id;
+                        });
+                    }.bind(this)
+                );
+                // Do not add attributes that already are added.
+                var filteredSelectData = [];
+                this.sandbox.util.foreach(selectData, function(data) {
+                    if (alreadyAddedAttributeIds.indexOf(data.id) === -1) {
+                        filteredSelectData.push(data);
+                    }
+                });
+
                 createAddOverlay.call(
                     this,
                     createAddOverlayContent.call(this, true),
                     onAddVariantAttributeOkClicked.bind(this)
                 );
-                startAttributesSelect.call(this, selectData);
+                startAttributesSelect.call(this, filteredSelectData);
             }.bind(this));
         },
 

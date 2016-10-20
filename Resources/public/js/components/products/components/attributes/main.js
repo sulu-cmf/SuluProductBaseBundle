@@ -547,6 +547,7 @@ define([
          */
         startAttributesSelect = function(selectData) {
             var preSelectedElement = [];
+            var defaultLabel = this.sandbox.translate('product.attribute.overlay.defaultlabel');
 
             // Preselect first element.
             if (selectData.length > 0 &&
@@ -555,6 +556,8 @@ define([
             ) {
                 selectedAttributeId = selectData[0].id;
                 preSelectedElement.push(selectData[0].name);
+            } else {
+                defaultLabel = this.sandbox.translate('sulu_product.attribute.overlay.no-attributes')
             }
 
             // Create select box in overlay.
@@ -562,7 +565,7 @@ define([
                 el: '#selectBox',
                 instanceName: constants.selectInstanceName,
                 multipleSelect: false,
-                defaultLabel: this.sandbox.translate('product.attribute.overlay.defaultlabel'),
+                defaultLabel: defaultLabel,
                 preSelectedElements: preSelectedElement,
                 valueName: 'name',
                 isNative: true,

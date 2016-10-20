@@ -436,6 +436,10 @@
                 <source>sulu_product.variant-attributes</source>
                 <target>Attributes for product with variants</target>
             </trans-unit>
+            <trans-unit id="attributes-02" resname="sulu_product.attribute.overlay.no-attributes">
+                <source>sulu_product.attribute.overlay.no-attributes</source>
+                <target>No attributes found</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

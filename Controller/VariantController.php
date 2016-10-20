@@ -33,7 +33,6 @@ use Symfony\Component\HttpFoundation\Response;
 class VariantController extends RestController implements ClassResourceInterface, SecuredControllerInterface
 {
     protected static $entityName = 'SuluProductBundle:Product';
-
     protected static $entityKey = 'products';
 
     /**

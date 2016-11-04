@@ -127,6 +127,10 @@
             <factory service="doctrine.orm.entity_manager" method="getRepository"/>
             <argument>SuluProductBundle:Addon</argument>
         </service>
+        <service id="sulu_product.product_translation_repository" class="Sulu\Bundle\ProductBundle\Entity\ProductTranslationRepository">
+            <factory service="doctrine.orm.entity_manager" method="getRepository"/>
+            <argument>SuluProductBundle:ProductTranslation</argument>
+        </service>
         <!--UTILS-->
         <service id="sulu_product.price_formatter" class="%sulu_product.price_formatter.class%">
             <argument>%sulu_product.default_formatter_locale%</argument>
@@ -256,6 +260,20 @@
             <tag name="sulu.localization_provider"/>
         </service>
 
+        <!--ENTITY LISTENER-->
+        <service id="sulu_product.product_translation_entity_listener" lazy="true" class="Sulu\Bundle\ProductBundle\EntityListener\ProductTranslationEntityListener">
+            <argument type="service" id="sulu_route.manager.route_manager"/>
+            <!--<argument type="service" id="service_container"/>-->
+
+            <tag name="doctrine.orm.entity_listener" lazy="true" />
+        </service>
+
+        <!--ROUTING-->
+        <service id="sulu_product.product_route_default_provider" lazy="true" class="Sulu\Bundle\ProductBundle\Routing\ProductRouteDefaultProvider">
+            <argument type="service" id="sulu_product.product_translation_repository"/>
+
+            <tag name="sulu_route.defaults_provider"/>
+        </service>
         <!--JS CONFIG-->
         <service id="sulu_product.js_config" class="%sulu_product.js_config.class%">
             <argument>sulu-product</argument>

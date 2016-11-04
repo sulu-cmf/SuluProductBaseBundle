@@ -76,7 +76,7 @@ class ProductFactory implements ProductFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createAddonProductApiEntity(ProductInterface $product, $locale)
+    public function createAddonProductApiEntity(ProductInterface $product, $locale, array $addonPrices = [])
     {
         return new ApiAddonProduct(
             $product,
@@ -84,7 +84,8 @@ class ProductFactory implements ProductFactoryInterface
             $this->priceFormatter,
             $this->productLocaleManager,
             $this,
-            $this->accountManager
+            $this->accountManager,
+            $addonPrices
         );
     }
 }

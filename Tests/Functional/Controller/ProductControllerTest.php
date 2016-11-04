@@ -675,7 +675,7 @@ class ProductControllerTest extends SuluTestCase
         $this->assertEquals($this->product2->getId(), $addon['id']);
 
         // Check if price is part of api.
-        $price = $addon['prices'][0];
+        $price = $addon['addonPrices'][0];
         $this->assertEquals(2.3, $price['price']);
         $this->assertEquals($this->currency1->getId(), $price['currency']['id']);
     }

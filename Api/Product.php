@@ -1334,9 +1334,9 @@ class Product extends ApiWrapper implements ApiProductInterface
         foreach ($addons as $addon) {
             $apiAddon = $this->productFactory->createAddonProductApiEntity(
                 $addon->getAddon(),
-                $this->locale
+                $this->locale,
+                iterator_to_array($addon->getAddonPrices())
             );
-            $apiAddon->setAddonPrices(iterator_to_array($addon->getAddonPrices()));
 
             $apiAddons[] = $apiAddon;
         }

@@ -11,20 +11,11 @@
 
 namespace Sulu\Bundle\ProductBundle\Api;
 
-use Sulu\Bundle\ProductBundle\Entity\AddonPrice as AddonPriceEntity;
-
 /**
  * Interface for Addon-Product Api Objects.
  */
 interface ApiAddonProductInterface
 {
-    /**
-     * @param AddonPriceEntity[] $addonPrices
-     *
-     * @return $this
-     */
-    public function setAddonPrices(array $addonPrices);
-
     /**
      * @return AddonPrice[]
      */

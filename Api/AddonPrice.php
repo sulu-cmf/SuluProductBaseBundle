@@ -33,11 +33,8 @@ class AddonPrice extends ApiWrapper
      * @param string $locale
      * @param PriceFormatter $priceFormatter
      */
-    public function __construct(
-        AddonPriceEntity $entity,
-        $locale,
-        PriceFormatter $priceFormatter
-    ) {
+    public function __construct(AddonPriceEntity $entity, $locale, PriceFormatter $priceFormatter)
+    {
         $this->entity = $entity;
         $this->locale = $locale;
         $this->priceFormatter = $priceFormatter;

@@ -39,7 +39,7 @@ class ProductRouteDefaultProvider implements RouteDefaultsProviderInterface
     public function getByEntity($entityClass, $id, $locale, $object = null)
     {
         if (!$object) {
-            $object = $this->productTranslationRepository->findBy(
+            $object = $this->productTranslationRepository->findOneBy(
                 [
                     'id' => $id,
                     'locale' => $locale,
@@ -48,7 +48,9 @@ class ProductRouteDefaultProvider implements RouteDefaultsProviderInterface
         }
 
         return [
+            'product' => $object->getProduct(),
             'object' => $object,
+            '_controller' => 'SuluProductBundle:ProductView:view',
         ];
     }
 

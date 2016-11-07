@@ -13,7 +13,9 @@ namespace Sulu\Bundle\ProductBundle\EntityListener;
 
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Sulu\Bundle\ProductBundle\Entity\ProductTranslation;
-use Sulu\Bundle\RouteBundle\Manager\RouteManagerInterface;
+use Sulu\Bundle\ProductBundle\Event\Events;
+use Sulu\Bundle\ProductBundle\Event\ProductTranslationEvent;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Entity listener for product translation class.
@@ -21,13 +23,16 @@ use Sulu\Bundle\RouteBundle\Manager\RouteManagerInterface;
 class ProductTranslationEntityListener
 {
     /**
-     * @param RouteManagerInterface $routeManager
+     * @var EventDispatcherInterface
      */
-    public function __construct(
-        RouteManagerInterface $routeManager
-    )
+    private $eventDispatcher;
+
+    /**
+     * @param EventDispatcherInterface $eventDispatcher
+     */
+    public function __construct(EventDispatcherInterface $eventDispatcher)
     {
-        $this->routeManager = $routeManager;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -36,10 +41,11 @@ class ProductTranslationEntityListener
      * @param ProductTranslation $productTranslation
      * @param LifecycleEventArgs $event
      */
-    public function postPersist(ProductTranslation $productTranslation, LifecycleEventArgs $event) {
-        // TODO: Create route for entity
-//        $this->routeManager->create($productTranslation);
-
-//        $event->getObjectManager()->flush();
+    public function postPersist(ProductTranslation $productTranslation)
+    {
+        $this->eventDispatcher->dispatch(
+            Events::PRODUCT_TRANSLATION_CREATED,
+            new ProductTranslationEvent($productTranslation)
+        );
     }
 }

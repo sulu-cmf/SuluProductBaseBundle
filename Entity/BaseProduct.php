@@ -1203,6 +1203,4 @@ abstract class BaseProduct implements ProductInterface
 
         return $this;
     }
-
-
 }

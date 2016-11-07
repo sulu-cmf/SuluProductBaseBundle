@@ -56,7 +56,7 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue(['de', 'en'])
                 ->end()
                 ->scalarNode('template')
-                    ->defaultValue('ClientWebsiteBundle:views:product.html.twig')
+                    ->defaultValue('SuluProductBundle:ProductView:product-detail.html.twig')
                 ->end()
             ->end();
 

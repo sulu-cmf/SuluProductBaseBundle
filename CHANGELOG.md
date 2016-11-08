@@ -2,6 +2,7 @@ CHANGELOG for Sulu Product Bundle
 =================================
 
 * dev-develop
+    * FEATURE     Implemented content tab for managing url.
     * BUGFIX      Fixed media tab for sulu version >= 1.3.
     * ENHANCEMENT Changed component structure for content-tabs. They are now located in edit.
     * FEATURE     Implemented custom routing with sulu-route-bundle.

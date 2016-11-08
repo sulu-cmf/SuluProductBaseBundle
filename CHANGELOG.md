@@ -3,6 +3,8 @@ CHANGELOG for Sulu Product Bundle
 
 * dev-develop
 
+    * BUGFIX      Fixed media-selection-overlay for sulu version > 1.2.
+    * ENHANCEMENT Changed component structure for content-tabs. They are now located in edit.
     * FEATURE     Implemented custom routing with sulu-route-bundle.
     * BUGFIX      Fixed status change in addons tab.
 

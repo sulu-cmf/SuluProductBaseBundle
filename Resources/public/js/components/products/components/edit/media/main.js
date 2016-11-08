@@ -17,6 +17,17 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
 
         fieldsKey: 'productMedia',
         fieldsUrl: 'api/products/media/fields'
+    },
+
+    /**
+     * Returns a comparable version number by parsing a version string.
+     *
+     * @param {String} versionString
+     */
+    getVersionFromString = function(versionString) {
+        var versionParts = versionString.split('.');
+
+        return parseInt(versionParts.slice(0,3).join(''));
     };
 
     return {
@@ -25,6 +36,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         templates: ['/admin/product/template/product/documents'],
 
         initialize: function() {
+            this.config = Config.get('sulu-product');
             this.newSelectionItems = [];
             this.newSelections = [];
             this.removedSelections = [];
@@ -32,7 +44,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
 
             this.status = this.options.data.attributes.status;
 
-            // reset status if it has been changed before and has not been saved
+            // Reset status if it has been changed before and has not been saved.
             this.sandbox.emit('product.state.change', this.status);
             this.setHeaderBar(true);
             this.render();
@@ -47,8 +59,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
 
         bindCustomEvents: function() {
             this.sandbox.on('product.state.change', function(status) {
-                if (!this.options.data ||
-                    !this.options.data.attributes.status ||
+                if (!this.options.data || !this.options.data.attributes.status ||
                     this.options.data.attributes.status.id !== status.id
                 ) {
                     this.status = status;
@@ -65,7 +76,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
 
             this.sandbox.on('sulu.products.saved', this.savedProduct.bind(this));
 
-            // checkbox clicked
+            // Checkbox clicked.
             this.sandbox.on('husky.datagrid.' + constants.instanceName + '.number.selections', function(number) {
                 var postfix = number > 0 ? 'enable' : 'disable';
                 this.sandbox.emit('husky.toolbar.documents.item.' + postfix, 'deleteSelected', false);
@@ -88,7 +99,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Removes elements from list
+         * Removes elements from list.
          */
         removeItemsFromList: function() {
             var ids = this.removedSelections.slice();
@@ -100,7 +111,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Adds new elements to the list
+         * Adds new elements to the list.
          */
         addItemsToList: function() {
             this.newSelectionItems.forEach(function(item) {
@@ -127,7 +138,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
                 var index = this.newSelections.indexOf(id);
                 this.newSelections.splice(index, 1);
                 this.newSelectionItems.splice(index, 1);
-            // when an element is in current selection and was deselected
+                // When an element is in current selection and was deselected.
             } else if (selectionIndex > -1 && this.removedSelections.indexOf(id) === -1) {
                 this.removedSelections.push(id);
             }
@@ -145,8 +156,8 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
             if (this.removedSelections.indexOf(id) > -1) {
                 this.removedSelections.splice(this.removedSelections.indexOf(id), 1);
                 this.currentSelection.push(id);
-            // add element when it is really new and not already selected
             } else if (this.currentSelection.indexOf(id) < 0 && this.newSelections.indexOf(id) < 0) {
+                // Add element when it is really new and not already selected.
                 this.newSelections.push(id);
                 this.newSelectionItems.push(item);
                 this.currentSelection.push(id);
@@ -154,7 +165,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Updates selected items in overlay
+         * Updates selected items in overlay.
          */
         updateOverlaySelected: function() {
             this.ignoreUpdates = true;
@@ -187,7 +198,11 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
             this.saved = false;
         },
 
-        // @var Bool saved - defines if saved state should be shown
+        /**
+         * Sets status of header's save button.
+         *
+         * @param {Bool} saved
+         */
         setHeaderBar: function(saved) {
             if (saved !== this.saved) {
                 if (!!saved) {
@@ -208,7 +223,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Removes all selected items
+         * Removes all selected items.
          */
         removeSelected: function() {
             this.sandbox.emit('husky.datagrid.documents.items.get-selected', function(ids) {
@@ -223,7 +238,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Initializes the datagrid-list
+         * Initializes the datagrid-list.
          */
         initList: function() {
             this.sandbox.sulu.initListToolbarAndList.call(this, constants.fieldsKey, constants.fieldsUrl,
@@ -252,7 +267,7 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Returns the url for the list for a specific product
+         * Returns the url for the list for a specific product.
          *
          * @returns {string}
          */
@@ -279,18 +294,24 @@ define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, De
         },
 
         /**
-         * Starts the overlay-component responsible for selecting the documents
+         * Starts the overlay-component responsible for selecting the documents.
          */
         startSelectionOverlay: function() {
             var $container = this.sandbox.dom.createElement('<div/>');
             this.sandbox.dom.append(this.$el, $container);
 
+            var componentName = 'media-selection/overlay@sulumedia';
+            if (getVersionFromString(this.config['sulu_version']) < getVersionFromString('1.3.0')) {
+                componentName = 'media-selection-overlay@sulumedia';
+            }
+
             this.sandbox.start([{
-                name: 'media-selection-overlay@sulumedia',
+                name: componentName,
                 options: {
                     el: $container,
                     instanceName: constants.instanceName,
-                    preselectedIds: this.currentSelection
+                    preselectedIds: this.currentSelection,
+                    locale: this.options.locale
                 }
             }]);
         }

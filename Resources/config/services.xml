@@ -293,6 +293,7 @@
             <argument type="collection">
                 <argument key="fallback_locale">%sulu_product.fallback_locale%</argument>
                 <argument key="locales">%sulu_product.locales%</argument>
+                <argument key="sulu_version">%sulu.version%</argument>
             </argument>
 
             <tag name="sulu.js_config"/>

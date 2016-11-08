@@ -381,7 +381,7 @@ define([
 
             var $tabContainer = this.sandbox.dom.createElement('<div/>'),
                 component = {
-                    name: 'products/components/content@suluproduct',
+                    name: 'products/components/edit@suluproduct',
                     options: {
                         el: $tabContainer,
                         locale: this.options.locale

@@ -192,7 +192,7 @@ class ProductManager implements ProductManagerInterface
     private $productTypesMap;
 
     /**
-     * @var ProductRouteManager
+     * @var ProductRouteManagerInterface
      */
     private $productRouteManager;
 
@@ -218,7 +218,7 @@ class ProductManager implements ProductManagerInterface
      * @param string $defaultCurrency
      * @param ProductAttributeManager $productAttributeManager
      * @param array $productTypesMap
-     * @param ProductRouteManager $productRouteManager
+     * @param ProductRouteManagerInterface $productRouteManager
      */
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -242,7 +242,7 @@ class ProductManager implements ProductManagerInterface
         $defaultCurrency,
         ProductAttributeManager $productAttributeManager,
         array $productTypesMap,
-        ProductRouteManager $productRouteManager
+        ProductRouteManagerInterface $productRouteManager
     ) {
         $this->productRepository = $productRepository;
         $this->specialPriceRepository = $specialPriceRepository;

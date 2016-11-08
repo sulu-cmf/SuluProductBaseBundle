@@ -282,7 +282,7 @@
         </service>
 
         <!--ROUTING-->
-        <service id="sulu_product.product_route_default_provider" class="Sulu\Bundle\ProductBundle\Routing\ProductRouteDefaultProvider">
+        <service id="sulu_product.product_route_defaults_provider" class="Sulu\Bundle\ProductBundle\Routing\ProductRouteDefaultsProvider">
             <argument type="service" id="sulu_product.product_translation_repository"/>
 
             <tag name="sulu_route.defaults_provider"/>

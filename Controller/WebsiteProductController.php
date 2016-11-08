@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * This controller is used for viewing product-templates.
  */
-class ProductViewController extends Controller
+class WebsiteProductController extends Controller
 {
     /**
      * This action is used for displaying a product via a template.
@@ -32,7 +32,7 @@ class ProductViewController extends Controller
      *
      * @return Response
      */
-    public function viewAction(ProductInterface $product, ProductTranslation $translation)
+    public function indexAction(ProductInterface $product, ProductTranslation $translation)
     {
         $apiProduct = $this->getProductFactory()->createApiEntity($product, $translation->getLocale());
 
@@ -40,8 +40,29 @@ class ProductViewController extends Controller
             $this->getProductViewTemplate(),
             [
                 'product' => $apiProduct,
+                'urls' => $this->getAllRoutesOfProduct($product),
             ]
         );
+    }
+
+    /**
+     * Returns all routes that are defined for given product.
+     *
+     * @param ProductInterface $product
+     *
+     * @return array
+     */
+    public function getAllRoutesOfProduct(ProductInterface $product)
+    {
+        $urls = [];
+        /** @var ProductTranslation $productTranslation */
+        foreach ($product->getTranslations() as $productTranslation) {
+            if ($productTranslation->getRoute()) {
+                $urls[$productTranslation->getLocale()] = $productTranslation->getRoute()->getPath();
+            }
+        }
+
+        return $urls;
     }
 
     /**

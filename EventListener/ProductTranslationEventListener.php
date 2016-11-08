@@ -13,7 +13,7 @@ namespace Sulu\Bundle\ProductBundle\EventListener;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sulu\Bundle\ProductBundle\Event\ProductTranslationEvent;
-use Sulu\Bundle\ProductBundle\Product\ProductRouteManager;
+use Sulu\Bundle\ProductBundle\Product\ProductRouteManagerInterface;
 
 /**
  * Event listener for product translation events.
@@ -21,7 +21,7 @@ use Sulu\Bundle\ProductBundle\Product\ProductRouteManager;
 class ProductTranslationEventListener
 {
     /**
-     * @var ProductRouteManager
+     * @var ProductRouteManagerInterface
      */
     private $productRouteManager;
 
@@ -31,11 +31,13 @@ class ProductTranslationEventListener
     private $entityManager;
 
     /**
-     * @param ProductRouteManager $productRouteManager
+     * @param ProductRouteManagerInterface $productRouteManager
      * @param EntityManagerInterface $entityManager
      */
-    public function __construct(ProductRouteManager $productRouteManager, EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        ProductRouteManagerInterface $productRouteManager,
+        EntityManagerInterface $entityManager
+    ) {
         $this->productRouteManager = $productRouteManager;
         $this->entityManager = $entityManager;
     }

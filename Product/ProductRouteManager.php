@@ -14,10 +14,7 @@ namespace Sulu\Bundle\ProductBundle\Product;
 use Sulu\Bundle\ProductBundle\Entity\ProductTranslation;
 use Sulu\Bundle\RouteBundle\Manager\RouteManagerInterface;
 
-/**
- * Manager for handling routes of product bundle.
- */
-class ProductRouteManager
+class ProductRouteManager implements ProductRouteManagerInterface
 {
     public static $routeEntityName = 'Sulu\Bundle\ProductBundle\Entity\ProductTranslation';
 
@@ -42,10 +39,7 @@ class ProductRouteManager
     }
 
     /**
-     * Handles creation or update of a product-route.
-     *
-     * @param ProductTranslation $productTranslation
-     * @param string|null $path
+     * {@inheritdoc}
      */
     public function saveRoute(ProductTranslation $productTranslation, $path = null)
     {
@@ -65,9 +59,7 @@ class ProductRouteManager
     }
 
     /**
-     * Checks if custom routing is enabled for products.
-     *
-     * @return bool
+     * {@inheritdoc}
      */
     public function isRoutingEnabled()
     {

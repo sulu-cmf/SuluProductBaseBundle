@@ -18,7 +18,7 @@ use Sulu\Bundle\RouteBundle\Routing\Defaults\RouteDefaultsProviderInterface;
 /**
  * Provides route-defaults for products.
  */
-class ProductRouteDefaultProvider implements RouteDefaultsProviderInterface
+class ProductRouteDefaultsProvider implements RouteDefaultsProviderInterface
 {
     /**
      * @var ProductTranslationRepository
@@ -50,7 +50,7 @@ class ProductRouteDefaultProvider implements RouteDefaultsProviderInterface
         return [
             'product' => $object->getProduct(),
             'object' => $object,
-            '_controller' => 'SuluProductBundle:ProductView:view',
+            '_controller' => 'SuluProductBundle:WebsiteProduct:index',
         ];
     }
 

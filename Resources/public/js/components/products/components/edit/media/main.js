@@ -7,313 +7,302 @@
  * with this source code in the file LICENSE.
  */
 
-define(['config', 'suluproduct/util/product-delete-dialog'], function(Config, DeleteDialog) {
+define([
+        'suluproduct/util/product-delete-dialog',
+        'services/product-media-manager'
+    ],
+    function(DeleteDialog, ProductMediaManager) {
 
-    'use strict';
+        'use strict';
 
-    var constants = {
-        instanceName: 'documents',
-        formSelector: '#documents-form',
+        var constants = {
+                instanceName: 'documents',
+                datagridInstanceName: 'documents-list',
+                formSelector: '#documents-form',
 
-        fieldsKey: 'productMedia',
-        fieldsUrl: 'api/products/media/fields'
-    },
+                fieldsKey: 'productMedia',
+                fieldsUrl: 'api/products/media/fields'
+            },
 
-    /**
-     * Returns a comparable version number by parsing a version string.
-     *
-     * @param {String} versionString
-     */
-    getVersionFromString = function(versionString) {
-        var versionParts = versionString.split('.');
+            /**
+             * Returns the url for the list for a specific product.
+             *
+             * @returns {string}
+             */
+            getListUrl = function(productId, locale) {
+                return 'api/products/' + productId + '/media?flat=true&locale=' + locale;
+            },
 
-        return parseInt(versionParts.slice(0,3).join(''));
-    };
+            /**
+             * Called when media has been saved.
+             */
+            onMediaUpdated = function() {
+                // Update Datagrid.
+                this.sandbox.emit('husky.datagrid.' + constants.datagridInstanceName + '.update');
+                // Update save button.
+                setSaveButton.call(this, this.saved, true);
+                // Show success label.
+                this.sandbox.emit('sulu.labels.success.show', 'labels.success.save-desc', 'labels.success');
+            },
 
-    return {
+            /**
+             * Called when product has been saved.
+             */
+            onProductSaved = function() {
+                this.options.data.attributes.status = this.status;
+                setSaveButton.call(this, true);
+            },
 
-        view: true,
-        templates: ['/admin/product/template/product/documents'],
-
-        initialize: function() {
-            this.config = Config.get('sulu-product');
-            this.newSelectionItems = [];
-            this.newSelections = [];
-            this.removedSelections = [];
-            this.currentSelection = this.sandbox.util.arrayGetColumn(this.options.data.attributes.media, 'id');
-
-            this.status = this.options.data.attributes.status;
-
-            // Reset status if it has been changed before and has not been saved.
-            this.sandbox.emit('product.state.change', this.status);
-            this.setHeaderBar(true);
-            this.render();
-            this.bindCustomEvents();
-        },
-
-        render: function() {
-            this.html(this.renderTemplate(this.templates[0]));
-            this.startSelectionOverlay();
-            this.initList();
-        },
-
-        bindCustomEvents: function() {
-            this.sandbox.on('product.state.change', function(status) {
-                if (!this.options.data || !this.options.data.attributes.status ||
-                    this.options.data.attributes.status.id !== status.id
-                ) {
+            /**
+             * Called when product status has changed.
+             *
+             * @param {Object} status
+             */
+            onProductStatusChanged = function(status) {
+                if (this.options.data.attributes.status.id !== status.id) {
                     this.status = status;
                     this.options.data.attributes.status = this.status;
-                    this.setHeaderBar(false);
+                    setSaveButton.call(this, true);
                 }
-            }, this);
+            },
 
-            this.sandbox.on('sulu.toolbar.save', this.submit.bind(this));
-
-            this.sandbox.on('sulu.header.back', function() {
-                this.sandbox.emit('sulu.products.list');
-            }, this);
-
-            this.sandbox.on('sulu.products.saved', this.savedProduct.bind(this));
-
-            // Checkbox clicked.
-            this.sandbox.on('husky.datagrid.' + constants.instanceName + '.number.selections', function(number) {
+            /**
+             * This function enables or disables the toolbars delete button
+             * when a datagrid element is selected.
+             *
+             * @param {Number} number
+             */
+            onDatagridCheckboxSelected = function(number) {
                 var postfix = number > 0 ? 'enable' : 'disable';
-                this.sandbox.emit('husky.toolbar.documents.item.' + postfix, 'deleteSelected', false);
-            }, this);
-
-            this.sandbox.on('sulu.products.media.removed', this.removeItemsFromList.bind(this));
-
-            this.sandbox.on('sulu.products.media.saved', this.addItemsToList.bind(this));
-
-            this.sandbox.on('husky.overlay.' + constants.instanceName + '.closed', this.submitMedia.bind(this));
-
-            this.sandbox.on(
-                'sulu.media-selection-overlay.' + constants.instanceName + '.record-selected',
-                this.selectItem.bind(this)
-            );
-            this.sandbox.on(
-                'sulu.media-selection-overlay.' + constants.instanceName + '.record-deselected',
-                this.deselectItem.bind(this)
-            );
-        },
-
-        /**
-         * Removes elements from list.
-         */
-        removeItemsFromList: function() {
-            var ids = this.removedSelections.slice();
-            ids.forEach(function(id) {
-                this.sandbox.emit('husky.datagrid.' + constants.instanceName + '.record.remove', id);
-            }.bind(this));
-            this.setHeaderBar(true);
-            this.removedSelections = [];
-        },
-
-        /**
-         * Adds new elements to the list.
-         */
-        addItemsToList: function() {
-            this.newSelectionItems.forEach(function(item) {
-                this.sandbox.emit('husky.datagrid.' + constants.instanceName + '.record.add', item);
-            }.bind(this));
-            this.setHeaderBar(true);
-            this.newSelectionItems = [];
-            this.newSelections = [];
-        },
-
-        savedProduct: function() {
-            this.options.data.attributes.status = this.status;
-            this.setHeaderBar(true);
-        },
-
-        deselectItem: function(id) {
-            if (!!this.ignoreUpdates) {
-                return;
-            }
-
-            var selectionIndex = this.currentSelection.indexOf(id);
-
-            if (this.newSelections.indexOf(id) > -1) {
-                var index = this.newSelections.indexOf(id);
-                this.newSelections.splice(index, 1);
-                this.newSelectionItems.splice(index, 1);
-                // When an element is in current selection and was deselected.
-            } else if (selectionIndex > -1 && this.removedSelections.indexOf(id) === -1) {
-                this.removedSelections.push(id);
-            }
-
-            if (selectionIndex > -1) {
-                this.currentSelection.splice(selectionIndex, 1);
-            }
-        },
-
-        selectItem: function(id, item) {
-            if (!!this.ignoreUpdates) {
-                return;
-            }
-
-            if (this.removedSelections.indexOf(id) > -1) {
-                this.removedSelections.splice(this.removedSelections.indexOf(id), 1);
-                this.currentSelection.push(id);
-            } else if (this.currentSelection.indexOf(id) < 0 && this.newSelections.indexOf(id) < 0) {
-                // Add element when it is really new and not already selected.
-                this.newSelections.push(id);
-                this.newSelectionItems.push(item);
-                this.currentSelection.push(id);
-            }
-        },
-
-        /**
-         * Updates selected items in overlay.
-         */
-        updateOverlaySelected: function() {
-            this.ignoreUpdates = true;
-            this.sandbox.emit('sulu.media-selection-overlay.documents.set-selected', this.currentSelection);
-            this.ignoreUpdates = false;
-        },
-
-        /**
-         * Saves / removes media from the product.
-         */
-        submitMedia: function() {
-            if (this.newSelections.length > 0 || this.removedSelections.length > 0) {
                 this.sandbox.emit(
-                    'sulu.products.media.save',
+                    'husky.toolbar.' + constants.datagridInstanceName + '.item.' + postfix,
+                    'deleteSelected',
+                    false
+                );
+            },
+
+            /**
+             * Saves media to the product.
+             *
+             * @param {Object} data
+             */
+            submitMedia = function(data) {
+                this.media = data;
+                this.sandbox.emit('sulu.header.toolbar.item.loading', 'save');
+
+                ProductMediaManager.save(
                     this.options.data.id,
-                    this.newSelections,
-                    this.removedSelections
+                    {
+                        mediaIds: this.sandbox.util.arrayGetColumn(data, 'id')
+                    }
+                ).done(onMediaUpdated.bind(this));
+            },
+
+            /**
+             * Shows the loader where save button is.
+             */
+            showLoader = function() {
+                this.sandbox.emit('sulu.header.toolbar.item.loading', 'save');
+            },
+
+            /**
+             * Performs patch for product status.
+             */
+            submitProduct = function() {
+                this.options.data.attributes.status = this.status;
+                this.sandbox.emit('sulu.products.save', this.options.data.attributes, true);
+                this.saved = false;
+            },
+
+            /**
+             * Sets status of header's save button.
+             *
+             * @param {Bool} disabled
+             * @param {Bool} force Defines if status change should be forced.
+             *                     May be needed, when button is in loading state.
+             */
+            setSaveButton = function(disabled, force) {
+                if (force || disabled !== this.saved) {
+                    if (!!disabled) {
+                        this.sandbox.emit('sulu.header.toolbar.item.disable', 'save', true);
+                    } else {
+                        this.sandbox.emit('sulu.header.toolbar.item.enable', 'save', false);
+                    }
+                }
+                this.saved = disabled;
+            },
+
+            /**
+             * Binds custom events to component.
+             */
+            bindCustomEvents = function() {
+                this.sandbox.on('product.state.change', onProductStatusChanged.bind(this));
+
+                this.sandbox.on('sulu.toolbar.save', submitProduct.bind(this));
+
+                this.sandbox.on('sulu.header.back', function() {
+                    this.sandbox.emit('sulu.products.list');
+                }, this);
+
+                this.sandbox.on('sulu.products.saved', onProductSaved.bind(this));
+
+                // Checkbox clicked.
+                this.sandbox.on(
+                    'husky.datagrid.' + constants.datagridInstanceName + '.number.selections',
+                    onDatagridCheckboxSelected.bind(this)
+                );
+            },
+
+            /**
+             * Delete all product media with given ids.
+             *
+             * @param {Array} ids
+             */
+            deleteProductMedia = function(ids) {
+                showLoader.call(this);
+
+                var requests = [];
+                _.each(ids, function(id) {
+                    requests.push(ProductMediaManager.delete(this.options.data.id, id));
+                }.bind(this));
+
+                // Disable loader once all requests are done.
+                this.sandbox.dom.when.apply(null, requests).done(onMediaUpdated.bind(this));
+            },
+
+            /**
+             * Removes all selected items.
+             */
+            onRemoveMediaClicked = function() {
+                var ids = [];
+                this.sandbox.emit(
+                    'husky.datagrid.' + constants.datagridInstanceName + '.items.get-selected',
+                    function(selectedIds) {
+                        ids = selectedIds;
+                    }.bind(this)
                 );
 
-                this.saved = false;
-            }
-        },
-
-        /**
-         * Saves product when status is changed.
-         */
-        submit: function() {
-            this.options.data.attributes.status = this.status;
-            this.sandbox.emit('sulu.products.save', this.options.data.attributes, true);
-            this.saved = false;
-        },
-
-        /**
-         * Sets status of header's save button.
-         *
-         * @param {Bool} saved
-         */
-        setHeaderBar: function(saved) {
-            if (saved !== this.saved) {
-                if (!!saved) {
-                    this.sandbox.emit('sulu.header.toolbar.item.disable', 'save', true);
-                } else {
-                    this.sandbox.emit('sulu.header.toolbar.item.enable', 'save', false);
-                }
-            }
-            this.saved = saved;
-        },
-
-        /**
-         * Opens
-         */
-        showAddOverlay: function() {
-            this.updateOverlaySelected()
-            this.sandbox.emit('sulu.media-selection-overlay.documents.open');
-        },
-
-        /**
-         * Removes all selected items.
-         */
-        removeSelected: function() {
-            this.sandbox.emit('husky.datagrid.documents.items.get-selected', function(ids) {
                 DeleteDialog.showMediaRemoveDialog(this.sandbox, function(wasConfirmed) {
                     if (wasConfirmed) {
-                        this.currentSelection = this.sandbox.util.removeFromArray(this.currentSelection, ids);
-                        this.removedSelections = ids;
-                        this.submitMedia();
+                        // Remove selected ids from media.
+                        this.media = this.media.filter(function(media) {
+                            if (ids.indexOf(media.id) === -1) {
+                                return media;
+                            }
+                        });
+
+                        deleteProductMedia.call(this, ids);
                     }
                 }.bind(this));
-            }.bind(this));
-        },
+            },
 
-        /**
-         * Initializes the datagrid-list.
-         */
-        initList: function() {
-            this.sandbox.sulu.initListToolbarAndList.call(this, constants.fieldsKey, constants.fieldsUrl,
-                {
-                    el: this.$find('#list-toolbar-container'),
-                    instanceName: constants.instanceName,
-                    template: this.getListTemplate(),
-                    hasSearch: true
-                },
-                {
-                    el: this.$find('#documents-list'),
-                    url: this.getListUrl(),
-                    searchInstanceName: constants.instanceName,
-                    instanceName: constants.instanceName,
-                    resultKey: 'media',
-                    searchFields: ['name', 'title', 'description'],
-                    viewOptions: {
-                        table: {
-                            selectItem: {
-                                type: 'checkbox'
+            /**
+             * Opens media selection overlay.
+             */
+            showAddOverlay = function() {
+                this.sandbox.emit(
+                    'sulu.media-selection-overlay.' + constants.instanceName + '.set-items',
+                    this.media
+                );
+                this.sandbox.emit('sulu.media-selection-overlay.' + constants.instanceName + '.open');
+            },
+
+            /**
+             * @returns {Array} Buttons used by the list-toolbar.
+             */
+            getToolbarTemplate = function() {
+                return this.sandbox.sulu.buttons.get({
+                    edit: {
+                        options: {
+                            callback: showAddOverlay.bind(this)
+                        }
+                    },
+                    deleteSelected: {
+                        options: {
+                            callback: onRemoveMediaClicked.bind(this)
+                        }
+                    }
+                });
+            };
+
+        return {
+            view: true,
+            templates: ['/admin/product/template/product/documents'],
+
+            initialize: function() {
+                this.newSelectionItems = [];
+                this.newSelections = [];
+                this.removedSelections = [];
+                this.media = this.options.data.attributes.media;
+                this.saved = false;
+
+                this.status = this.options.data.attributes.status;
+
+                // Reset status if it has been changed before and has not been saved.
+                this.sandbox.emit('product.state.change', this.status);
+                setSaveButton.call(this, true);
+                this.render();
+                bindCustomEvents.call(this);
+            },
+
+            render: function() {
+                this.html(this.renderTemplate(this.templates[0]));
+
+                this.sandbox.once('husky.datagrid.' + constants.datagridInstanceName + '.loaded', function(mediaItems) {
+                    this.startSelectionOverlay(mediaItems._embedded.media);
+                }.bind(this));
+                this.initList();
+            },
+
+            /**
+             * Initializes the datagrid-list.
+             */
+            initList: function() {
+                this.sandbox.sulu.initListToolbarAndList.call(
+                    this,
+                    constants.fieldsKey,
+                    constants.fieldsUrl + '?locale=' + this.options.locale,
+                    {
+                        el: this.$find('#list-toolbar-container'),
+                        instanceName: constants.datagridInstanceName,
+                        template: getToolbarTemplate.call(this),
+                        hasSearch: true
+                    },
+                    {
+                        el: this.$find('#documents-list'),
+                        url: getListUrl(this.options.data.id, this.options.locale),
+                        searchInstanceName: constants.datagridInstanceName,
+                        instanceName: constants.datagridInstanceName,
+                        resultKey: 'media',
+                        searchFields: ['name', 'title', 'description'],
+                        viewOptions: {
+                            table: {
+                                selectItem: {
+                                    type: 'checkbox'
+                                }
                             }
                         }
                     }
-                }
-            );
-        },
+                );
+            },
 
-        /**
-         * Returns the url for the list for a specific product.
-         *
-         * @returns {string}
-         */
-        getListUrl: function() {
-            return 'api/products/' + this.options.data.id + '/media?flat=true'
-        },
+            /**
+             * Starts the overlay-component responsible for selecting the documents.
+             */
+            startSelectionOverlay: function(preselected) {
+                var $container = this.sandbox.dom.createElement('<div/>');
+                this.sandbox.dom.append(this.$el, $container);
 
-        /**
-         * @returns {Array} buttons used by the list-toolbar
-         */
-        getListTemplate: function() {
-            return this.sandbox.sulu.buttons.get({
-                add: {
+                this.sandbox.start([{
+                    name: 'media-selection/overlay@sulumedia',
                     options: {
-                        callback: this.showAddOverlay.bind(this)
+                        el: $container,
+                        instanceName: constants.instanceName,
+                        preselected: preselected,
+                        locale: this.options.locale,
+                        saveCallback: submitMedia.bind(this)
                     }
-                },
-                deleteSelected: {
-                    options: {
-                        callback: this.removeSelected.bind(this)
-                    }
-                }
-            });
-        },
-
-        /**
-         * Starts the overlay-component responsible for selecting the documents.
-         */
-        startSelectionOverlay: function() {
-            var $container = this.sandbox.dom.createElement('<div/>');
-            this.sandbox.dom.append(this.$el, $container);
-
-            var componentName = 'media-selection/overlay@sulumedia';
-            if (getVersionFromString(this.config['sulu_version']) < getVersionFromString('1.3.0')) {
-                componentName = 'media-selection-overlay@sulumedia';
+                }]);
             }
-
-            this.sandbox.start([{
-                name: componentName,
-                options: {
-                    el: $container,
-                    instanceName: constants.instanceName,
-                    preselectedIds: this.currentSelection,
-                    locale: this.options.locale
-                }
-            }]);
-        }
-    };
-});
+        };
+    });

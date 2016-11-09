@@ -79,6 +79,7 @@ class SuluProductExtension extends Extension implements PrependExtensionInterfac
                         'codes' => [
                             'Sulu\Bundle\ProductBundle\Product\Exception\AttributeNotFoundException' => 400,
                             'Sulu\Bundle\ProductBundle\Product\Exception\ProductNotFoundException' => 400,
+                            'Sulu\Component\Rest\Exception\EntityNotFoundException' => 404,
                             'Sulu\Bundle\ProductBundle\Product\Exception\ProductException' => 400,
                         ],
                     ],

@@ -133,9 +133,6 @@ define([
                 this.deleteVariants(ids);
             }, this);
 
-            // Handling media.
-            this.sandbox.on('sulu.products.media.save', this.saveMedia.bind(this));
-
             // Workflow.
             this.sandbox.on('sulu.products.workflow.triggered', this.triggerWorkflowAction.bind(this));
 
@@ -193,70 +190,6 @@ define([
             }
         },
 
-        saveMedia: function(productId, media) {
-            this.sandbox.emit('sulu.header.toolbar.item.loading', 'save');
-
-            var mediaIds = this.sandbox.util.arrayGetColumn(media, 'id');
-
-            this.processAjaxForMedia(mediaIds, productId);
-
-            //this.processAjaxForMedia(removedMediaIds, productId, 'DELETE');
-            //
-            //var mediaIds = this.sandbox.util.arrayGetColumn(this.product.attributes.media, 'id');
-            //var i, len, id;
-            //
-            //// Add new media to backbone model.
-            //for (i = -1, len = newMediaIds.length; ++i < len;) {
-            //    id = newMediaIds[i];
-            //
-            //    if (mediaIds.indexOf(id) === -1) {
-            //        this.product.set({
-            //            'media': this.product.get('media').concat({'id': id})
-            //        });
-            //        mediaIds.push(id);
-            //    }
-            //}
-            //
-            //// Remove deleted media from backbone model.
-            //for (i = -1, len = removedMediaIds.length; ++i < len;) {
-            //    id = removedMediaIds[i];
-            //
-            //    var mediaIndex = mediaIds.indexOf(id);
-            //
-            //    if (mediaIndex > -1) {
-            //        this.product.get('media').splice(mediaIndex, 1);
-            //        mediaIds.splice(mediaIndex, 1);
-            //    }
-            //}
-
-        },
-
-        /**
-         * Performs PUT request to save given media to product.
-         *
-         * @param {Array} mediaIds
-         * @param {NumbproductId
-         */
-        processAjaxForMedia: function(mediaIds, productId) {
-            var url = '/admin/api/products/' + productId + '/media';
-
-            this.sandbox.util.ajax(
-                {
-                    url: url,
-                    data: {
-                        mediaIds: mediaIds
-                    },
-                    type: 'PUT',
-                    success: function() {
-                        this.sandbox.emit('sulu.products.media.saved');
-                    }.bind(this),
-                    error: function() {
-                        this.sandbox.logger.error("Error while saving media!");
-                    }.bind(this)
-                }
-            );
-        },
-
         save: function(data, doPatch) {
             this.sandbox.emit('sulu.header.toolbar.item.loading', 'save');
             this.product.set(data);
@@ -290,9 +223,7 @@ define([
                     this.sandbox.emit('sulu.products.save-error', response);
                 }.bind(this)
             });
-        }
-
-        ,
+        },
 
         load: function(id, localization) {
             var tabName = 'details';
@@ -302,8 +233,7 @@ define([
             }
 
             this.sandbox.emit('sulu.router.navigate', 'pim/products/' + localization + '/edit:' + id + '/' + tabName);
-        }
-        ,
+        },
 
         del: function(ids) {
             this.confirmDeleteDialog(function(wasConfirmed) {
@@ -318,13 +248,11 @@ define([
                     }.bind(this));
                 }
             }.bind(this));
-        }
-        ,
+        },
 
         deleteProduct: function(id) {
             DeleteDialog.show(this.sandbox, Product.findOrCreate({id: id}));
-        }
-        ,
+        },
 
         addVariant: function(id) {
             this.product.get('variants').fetch(
@@ -340,8 +268,7 @@ define([
                     }.bind(this)
                 }
             );
-        }
-        ,
+        },
 
         deleteVariants: function(ids) {
             this.confirmDeleteDialog(function(wasConfirmed) {
@@ -362,8 +289,7 @@ define([
                     });
                 }
             }.bind(this));
-        }
-        ,
+        },
 
         confirmDeleteDialog: function(callbackFunction) {
             this.sandbox.emit(
@@ -373,8 +299,7 @@ define([
                 callbackFunction.bind(this, false),
                 callbackFunction.bind(this, true)
             );
-        }
-        ,
+        },
 
         renderTabs: function() {
             this.product = new Product();
@@ -416,8 +341,7 @@ define([
             }
 
             return dfd.promise();
-        }
-        ,
+        },
 
         /**
          * Creates the view for the flat product list.
@@ -434,8 +358,7 @@ define([
                     }
                 }
             ]);
-        }
-        ,
+        },
 
         /**
          * Creates the view for the product import.
@@ -453,5 +376,4 @@ define([
             ]);
         }
     };
-})
-;
+});

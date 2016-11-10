@@ -9,7 +9,7 @@
                 "type": "integer",
                 "required": []
             }
-        },
+        }
     },
     "required": ["mediaIds"]
 }

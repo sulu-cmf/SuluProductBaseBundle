@@ -14,6 +14,9 @@ namespace Sulu\Bundle\ProductBundle\Product;
 use Sulu\Bundle\ProductBundle\Entity\ProductInterface;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
 
+/**
+ * Interface for product media manager service, which is responsible for managing product media relations.
+ */
 interface ProductMediaManagerInterface
 {
     /**

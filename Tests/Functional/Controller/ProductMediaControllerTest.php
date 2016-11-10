@@ -658,7 +658,7 @@ class ProductMediaControllerTest extends SuluTestCase
      */
     public function testGetAllMedia()
     {
-        $this->client->request('GET', '/api/products/' . $this->product1->getId() . '/media?flat=true');
+        $this->client->request('GET', '/api/products/' . $this->product1->getId() . '/media?flat=true&locale=en');
         $response = json_decode($this->client->getResponse()->getContent());
         $items = $response->_embedded->media;
 
@@ -666,6 +666,10 @@ class ProductMediaControllerTest extends SuluTestCase
         $this->assertEquals(2, count($items));
 
         $this->checkProductAttributes();
+
+        // Now test without providing locale.
+        $this->client->request('GET', '/api/products/' . $this->product1->getId() . '/media?flat=true');
+        $this->assertEquals(400, $this->client->getResponse()->getStatusCode());
     }
 
     /**

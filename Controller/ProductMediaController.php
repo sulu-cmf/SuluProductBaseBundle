@@ -12,6 +12,7 @@
 namespace Sulu\Bundle\ProductBundle\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
+use FOS\RestBundle\Controller\Annotations\Get;
 use FOS\RestBundle\Controller\Annotations\RouteResource;
 use Sulu\Bundle\MediaBundle\Entity\MediaRepositoryInterface;
 use Sulu\Bundle\MediaBundle\Media\Manager\MediaManagerInterface;
@@ -40,13 +41,13 @@ class ProductMediaController extends RestController
     /**
      * Returns all fields that can be used by list.
      *
-     * @param Request $request
+     * @Get("products/media/fields")
      *
-     * TODO: SchemaValidation
+     * @param Request $request
      *
      * @return Response
      */
-    public function fieldsAction(Request $request)
+    public function getFieldsAction(Request $request)
     {
         $locale = $request->get('locale');
 

@@ -18,6 +18,9 @@ use Sulu\Bundle\ProductBundle\Product\Exception\ProductException;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineFieldDescriptor;
 use Sulu\Component\Rest\ListBuilder\Doctrine\FieldDescriptor\DoctrineJoinDescriptor;
 
+/**
+ * This service is responsible for managing product media relations.
+ */
 class ProductMediaManager implements ProductMediaManagerInterface
 {
     protected static $mediaEntityName = 'SuluMediaBundle:Media';

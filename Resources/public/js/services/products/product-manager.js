@@ -1,5 +1,5 @@
 /*
- * This file is part of the Sulu CMS.
+ * This file is part of Sulu.
  *
  * (c) MASSIVE ART WebServices GmbH
  *
@@ -14,6 +14,7 @@ define(['jquery', 'services/husky/util'], function($, Util) {
 
         /**
          * Creates url based on given data.
+         *
          * @param {Object} data
          * @param {String} locale
          * @param {String} action
@@ -88,7 +89,8 @@ define(['jquery', 'services/husky/util'], function($, Util) {
          * Deletes product with the given id.
          *
          * @param {Number} productId
-         * @returns {*}
+         *
+         * @returns {Object}
          */
         delete: function(productId) {
             return Util.save(

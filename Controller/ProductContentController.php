@@ -74,7 +74,7 @@ class ProductContentController extends RestController
     }
 
     /**
-     * Fetches prodcuct by id from database.
+     * Fetches product by id from database.
      *
      * @param int $productId
      *

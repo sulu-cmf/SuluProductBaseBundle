@@ -73,6 +73,8 @@ class ProductContentMapper implements ProductContentMapperInterface
     }
 
     /**
+     * Parses product content data to an array.
+     *
      * @param ProductTranslation $productTranslation
      *
      * @return array

@@ -16,7 +16,7 @@ define(['jquery', 'services/husky/util'], function($, Util) {
          * Returns product media url.
          *
          * @param {Number} productId
-         * @param {Number} mediaId
+         * @param {Number} locale
          */
         getUrl = function(productId, locale) {
             var url = baseUrl.replace('%s', productId).replace('%s', locale);
@@ -29,6 +29,7 @@ define(['jquery', 'services/husky/util'], function($, Util) {
          * Loads content for a specific product id.
          *
          * @param {Number} productId
+         * @param {String} locale
          *
          * @returns {Object}
          */
@@ -40,6 +41,7 @@ define(['jquery', 'services/husky/util'], function($, Util) {
          * Function for saving new product media relations.
          *
          * @param {Number} productId
+         * @param {String} locale
          * @param {Object} data
          *
          * @returns {Object}

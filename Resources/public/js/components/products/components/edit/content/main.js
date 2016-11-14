@@ -10,8 +10,9 @@
 define([
     'services/product/product-content-manager',
     'services/product/product-manager',
-    'suluproduct/util/header'
-], function(ProductContentManager, ProductManager, HeaderUtil) {
+    'suluproduct/util/header',
+    'text!suluproduct/components/products/components/edit/content/content.html',
+], function(ProductContentManager, ProductManager, HeaderUtil, ContentTemplate) {
 
     'use strict';
 
@@ -19,36 +20,8 @@ define([
             data: {}
         },
 
-        constants = {
-            formId: 'content-form'
-        },
-
         selectors = {
-            form: '#' + constants.formId
-        },
-
-        templates = {
-            /**
-             * Content template.
-             */
-            content: [
-                '<form id="' + constants.formId + '">',
-                '   <div class="highlight-section fixed-width">',
-                '       <div class="grid-row content">',
-                '           <div class="form-group floating grid-col-12">',
-                '               <label for="title" class="pointer "><%= translate(\'public.title\') %></label>',
-                '               <input id="title" data-mapper-property="title" type="text" class="form-element input-large"/>',
-                '           </div>',
-                '           <div class="floating grid-col-12">',
-                '           <div class="form-group grid-col-6">',
-                '               <label for="routePath" class="pointer "><%= translate(\'sulu_product.route-path\') %></label>',
-                '               <input id="routePath" data-mapper-property="routePath" type="text" class="form-element"/>',
-                '           </div>',
-                '           </div>',
-                '       </div>',
-                '   </div>',
-                '</form>'
-            ].join('')
+            form: '#content-form'
         },
 
         /**
@@ -65,6 +38,9 @@ define([
             if (!this.sandbox.form.validate(selectors.form)) {
                 return;
             }
+
+            // Show loader in toolbar.
+            this.sandbox.emit('sulu.header.toolbar.item.loading', 'save');
 
             // Get data of form.
             var data = this.sandbox.form.getData(selectors.form);
@@ -84,12 +60,15 @@ define([
 
         /**
          * Triggered when content has been saved to product.
+         *
+         * @param {Array} whenData
          */
-        onProductSaved = function() {
-            alert("all data saved, show label");
-
+        onProductSaved = function(whenData) {
             // Disable save button.
             HeaderUtil.setSaveButton(false);
+            this.sandbox.emit('sulu.labels.success.show', 'labels.success.save-desc', 'labels.success');
+            // Set form with data of response of first deferred.
+            setFormData.call(this, whenData[0]);
         },
 
         /**
@@ -118,11 +97,12 @@ define([
         },
 
         /**
-         * Listens for changes of form.
+         * Starts form and listens for changes of form.
          *
          * @returns {Bool}
          */
-        listenForFormChange = function() {
+        startForm = function() {
+            this.sandbox.start(selectors.form);
             this.sandbox.dom.on(this.$el, 'keyup', HeaderUtil.setSaveButton.bind(this, true));
 
             return true;
@@ -132,8 +112,8 @@ define([
          * Called when data has been set to form.
          */
         onFormDataSet = function() {
-            if (!this.listenerEnabled) {
-                this.listenerEnabled = listenForFormChange.call(this);
+            if (!this.isFormStarted) {
+                this.isFormStarted = startForm.call(this);
             }
         },
 
@@ -142,7 +122,7 @@ define([
          */
         render = function(contentData) {
             // Render template.
-            this.sandbox.dom.html(this.$el, _.template(templates.content, {
+            this.sandbox.dom.html(this.$el, _.template(ContentTemplate, {
                 'translate': this.sandbox.translate
             }));
 
@@ -172,11 +152,11 @@ define([
          * Initialization function of variants-list.
          */
         initialize: function() {
-            this.listenerEnabled = false;
+            this.isFormStarted = false;
+            this.formObject = null;
 
             // Merge options with defaults.
             this.options = this.sandbox.util.extend(true, {}, defaults, this.options);
-            // TODO: Register status changes
             this.status = this.options.data.attributes.status;
 
             // Set correct status in header bar.

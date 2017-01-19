@@ -2,6 +2,7 @@ CHANGELOG for Sulu Product Bundle
 =================================
 
 * dev-develop
+    * FEATURE     Improved ProductLocaleManager to check if requested locale is available.
     * ENHANCEMENT Adapted ProductTestData and corrected locale behaviour.
     * FEATURE     Implemented content api and mapper service for storing content to database.
     * FEATURE     Implemented content tab for managing content route path and title.

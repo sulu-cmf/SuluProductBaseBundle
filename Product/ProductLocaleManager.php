@@ -64,9 +64,26 @@ class ProductLocaleManager
      */
     public function retrieveLocale(UserInterface $user, $requestLocale = null)
     {
-        // Use request locale if defined.
+        // When request locale is defined, check if we can use it.
         if ($requestLocale && is_string($requestLocale)) {
-            return $requestLocale;
+            $requestLanguageMatch = null;
+            $requestLanguage = strstr($user->getLocale(), '_', true);
+
+            foreach ($this->configuration['locales'] as $locale) {
+                // If locale matches request locale, the exact matching was found.
+                if ($requestLocale === $locale) {
+                    return $locale;
+                }
+
+                // Check if request language (without locale) matches.
+                if ($requestLanguage == $locale) {
+                    $requestLanguageMatch = $locale;
+                }
+            }
+
+            if ($requestLanguageMatch) {
+                return $requestLanguageMatch;
+            }
         }
 
         $languageMatch = null;
@@ -74,7 +91,7 @@ class ProductLocaleManager
 
         foreach ($this->configuration['locales'] as $locale) {
             // If locale matches users locale, the exact matching was found.
-            if ($user->getLocale() == $locale) {
+            if ($user->getLocale() === $locale) {
                 return $locale;
             }
 

@@ -1,6 +1,10 @@
 CHANGELOG for Sulu Product Bundle
 =================================
 
+* 0.17.0 (2016-01-19)
+
+    * FEATURE     Improved ProductLocaleManager to check if requested locale is available.
+
 * 0.16.3 (2016-11-22)
 
     * BUGFIX      Fixed setting attributes of value '0'.

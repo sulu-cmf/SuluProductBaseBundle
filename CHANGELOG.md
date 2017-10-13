@@ -1,7 +1,7 @@
 CHANGELOG for Sulu Product Bundle
 =================================
 
-* unreleased
+* 0.16.7 (2017-10-13)
 
     * BUGFIX      Addons: Fixed addon overlay if price is overwritten with value 0.
 
